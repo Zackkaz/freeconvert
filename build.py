@@ -21,13 +21,42 @@ SITE = "https://freeconvert.pages.dev"   # swap for your custom domain later
 # MONETIZATION — paste your real ad snippets here (lenient networks, no strict policy).
 # Leave a key empty ("") to skip that slot. They render only when filled.
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# MONETIZATION — paste your REAL ad snippets here, then rebuild + push.
+# Each network has NO/minimum traffic requirement (lenient policies).
+# Fill the YOUR_*_HERE placeholders with the exact values from your account.
+# Leave a key as "" to disable that slot. The snippet is emitted verbatim
+# on every page that uses the slot (see ad_slot()), so this is the ONLY
+# edit needed to go live — no other code change required.
+# ---------------------------------------------------------------------------
 ADS = {
-    # Adsterra: get code from adsterra.com -> Websites -> your site -> Native Banner / Social Bar
-    "adsterra_native":  "",
-    # PropellerAds: propellerads.com -> your site -> OnClick / Interstitial / Push notification
-    "propeller_onclick": "",
-    # Monetag: monetag.com -> your site -> SmartLink (great for global/Global-South traffic)
-    "monetag_smartlink": "",
+    # Adsterra — Native Banner / Social Bar (instant approval, no traffic min).
+    # Get code at adsterra.com -> Websites -> your site -> Native Banner.
+    # Replace YOUR_ADSTERRA_KEY with the "key" value Adsterra gives you.
+    "adsterra_native":  (
+        '<script type="text/javascript">'
+        'atOptions = {key:"YOUR_ADSTERRA_KEY_HERE", format:"iframe", height:250, width:300, params:{}};'
+        '(function(){var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0];'
+        'g.src="https://cdn.adsterra.com/asyncjs.php"; s.parentNode.insertBefore(g,s);})();'
+        '</script>'
+    ),
+
+    # PropellerAds — OnClick / Interstitial (fast approval, no traffic min).
+    # Get code at propellerads.com -> your site -> OnClick.
+    # Replace YOUR_PROPELLER_ZONE_ID with the zone ID PropellerAds assigns.
+    "propeller_onclick": (
+        '<script type="text/javascript" src="//si.url-provider.com/async/ YOUR_PROPELLER_ZONE_ID_HERE " '
+        'async="async"></script>'
+    ),
+
+    # Monetag — SmartLink (1-2 day approval; pays well for Global-South traffic).
+    # Get code at monetag.com -> your site -> SmartLink.
+    # Replace YOUR_MONETAG_SMARTLINK_URL with the smartlink URL Monetag gives you.
+    "monetag_smartlink": (
+        '<a href="YOUR_MONETAG_SMARTLINK_URL_HERE" rel="nofollow">'
+        '<script type="text/javascript" src="//slmonitor.net/script.js" async></script>'
+        'Open exclusive offers</a>'
+    ),
 }
 
 # ---------------------------------------------------------------------------
