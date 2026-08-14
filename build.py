@@ -15,10 +15,11 @@ import os, json, math, datetime
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PUB  = os.path.join(ROOT, "public")
-# Deployment base path. GitHub Pages project sites serve at /<repo>/, so set
-# BASE to "/freeconvert". For a custom domain or Cloudflare Pages root, use "".
-BASE = "/freeconvert"
-SITE = "https://zackkaz.github.io/freeconvert"   # swap if you use a custom domain
+# Deployment base path. GitHub USER Pages (zackkaz.github.io) serve at the
+# true origin root, so BASE = "". This is required so Monetag's file-upload
+# verification finds sw.js at https://zackkaz.github.io/sw.js (NOT a subpath).
+BASE = ""
+SITE = "https://zackkaz.github.io"   # GitHub user Pages root
 
 # Monetag service-worker push monetization. Provided snippet (your zoneId).
 # Written to public/sw.js by build.py so it survives the clean-rebuild step.

@@ -78,16 +78,16 @@ print("sampled pages missing title/desc:", bad, "of", len(sample))
 if bad:
     fail("SEO meta missing")
 
-# 6) Asset references resolve correctly under the BASE subpath (no depth-broken ../assets)
+# 6) Asset references resolve correctly at the origin root (no depth-broken ../assets)
 bad_refs = 0
 for p in sample:
     h = open(p, encoding="utf-8").read()
-    # flag any asset ref that is NOT pointing at the BASE-prefixed path
-    if re.search(r'(href|src)="[^"]*assets/', h) and '="/freeconvert/assets/' not in h:
+    # flag any asset ref that is NOT pointing at the root /assets/ path
+    if re.search(r'(href|src)="[^"]*assets/', h) and '="/assets/' not in h:
         bad_refs += 1
 if bad_refs:
-    fail("%d pages have asset refs not under /freeconvert/assets/" % bad_refs)
-print("asset refs under /freeconvert/assets/: OK")
+    fail("%d pages have asset refs not under /assets/" % bad_refs)
+print("asset refs under /assets/: OK")
 
 # 7) JSON-LD valid on a pair page
 pair = os.path.join(PUB, "length", "meter-to-foot", "index.html")

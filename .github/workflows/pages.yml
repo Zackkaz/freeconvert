@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to GitHub Pages (user site)
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # needed by peaceiris/actions-gh-pages to push to gh-pages
+  contents: write   # needed by peaceiris/actions-gh-pages to push to the target repo
 
 jobs:
   build-and-deploy:
@@ -20,13 +20,19 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Generate site
+      - name: Generate site (BASE="" -> serves at true origin root)
         run: python3 build.py
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to zackkaz.github.io (user Pages, root)
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Personal Access Token with repo scope is required to push to a
+          # DIFFERENT repository (the user Pages repo). The default
+          # GITHUB_TOKEN cannot write to another repo. Provide it as a secret
+          # named GH_PAGES_TOKEN (Settings -> Secrets -> Actions), then switch
+          # the line below. If absent, this step fails with a permission error.
+          personal_token: ${{ secrets.GH_PAGES_TOKEN }}
+          external_repository: Zackkaz/zackkaz.github.io
           publish_dir: ./public
-          # publishes to the gh-pages branch; enable Pages in repo Settings -> Pages
-          # with source = "Deploy from a branch" -> gh-pages / root.
+          publish_branch: main
