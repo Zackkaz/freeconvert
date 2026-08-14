@@ -1,0 +1,8 @@
+name = "freeconvert"
+main = "public/index.html"
+compatibility_date = "2026-08-14"
+
+[pages]
+# Cloudflare Pages — direct upload of the built static site.
+# Usage:  npx wrangler pages deploy public --project-name freeconvert
+# (first run once:  npx wrangler pages projects list   -> creates the project on your account)
