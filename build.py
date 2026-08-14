@@ -498,7 +498,15 @@ def main():
         write(f"calculators/{slug}/index.html", calc_page(slug,title,desc,fields,btn,fn,out))
         urls.append(f"{SITE}/calculators/{slug}/")
 
-    write("robots.txt", f"User-agent: *\nAllow: /\nSitemap: {SITE}/sitemap.xml\n")
+    write("robots.txt", f"""User-agent: *
+Allow: /
+Sitemap: {SITE}/sitemap.xml
+
+# Crawl-delay is ignored by Google but helps smaller engines on shared hosting.
+# (GitHub Pages handles load fine; kept conservative for politeness.)
+User-agent: Bingbot
+Crawl-delay: 1
+""")
     sm=f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \
        "".join(f"<url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n"
     write("sitemap.xml", sm)
@@ -515,6 +523,16 @@ def main():
     # IndexNow key file — proves ownership of the key to Bing/Yandex/Naver.
     # (Deployed as /<KEY>.txt so IndexNow can validate ownership.)
     write(f"{INDEXNOW_KEY}.txt", INDEXNOW_KEY)
+
+    # humans.txt — a small trust/transparency signal crawlers and humans can read.
+    write("humans.txt", f"""# humanstxt.org/
+Team
+    Site: FreeConvert — free unit converters & calculators
+    Built with: Python static generator + GitHub Pages ($0 hosting)
+    Contact: open an issue on github.com/Zackkaz/freeconvert
+Last build: {datetime.date.today().isoformat()}
+Thanks to the open-source static-web community.
+""")
 
     # --- Instant-index key URLs via IndexNow (no login required) ----------------
     # Bing/Yandex/Naver/Seznam pick these up immediately; the rest of the

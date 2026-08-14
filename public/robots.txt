@@ -1,3 +1,8 @@
 User-agent: *
 Allow: /
 Sitemap: https://zackkaz.github.io/sitemap.xml
+
+# Crawl-delay is ignored by Google but helps smaller engines on shared hosting.
+# (GitHub Pages handles load fine; kept conservative for politeness.)
+User-agent: Bingbot
+Crawl-delay: 1
