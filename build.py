@@ -21,15 +21,21 @@ PUB  = os.path.join(ROOT, "public")
 BASE = ""
 SITE = "https://zackkaz.github.io"   # GitHub user Pages root
 
-# Monetag service-worker push monetization. Provided snippet (your zoneId).
+# Monetag service-worker push monetization. "Superior tag" (zoneId 11579192).
 # Written to public/sw.js by build.py so it survives the clean-rebuild step.
 MONETAG_SW = '''self.options = {
     "domain": "5gvci.com",
-    "zoneId": 11579053
+    "zoneId": 11579192
 }
 self.lary = ""
 importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw')
 '''
+
+# Monetag "Superior tag" — injected immediately after <head> on every page.
+# (Instructed by user: zone 270206. NOTE: src="" looks incomplete — Monetag
+# normally serves the loader from its own domain; keep as given, revisit if
+# the tag never fires.)
+MONETAG_HEAD_TAG = '<script src="" data-zone="270206" async data-cfasync="false"></script>'
 
 # ---------------------------------------------------------------------------
 # MONETIZATION — paste your real ad snippets here (lenient networks, no strict policy).
@@ -227,6 +233,7 @@ def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld
     return f"""<!doctype html>
 <html lang="en">
 <head>
+{MONETAG_HEAD_TAG}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
