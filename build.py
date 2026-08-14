@@ -38,6 +38,25 @@ MONETAG_TAG_FILE = "monetag_tag.min.js"
 MONETAG_HEAD_TAG = f'<script src="{BASE}/{MONETAG_TAG_FILE}" data-zone="270206" async data-cfasync="false"></script>'
 
 # ---------------------------------------------------------------------------
+# SEARCH-ENGINE VERIFICATION + INDEXING (root files, generated each build)
+# ---------------------------------------------------------------------------
+# Google Search Console (URL-prefix, HTML-file method):
+#   1) In GSC add property "https://zackkaz.github.io", choose "HTML file".
+#   2) Copy the file NAME Google shows (e.g. google4f3a9c1b2d.html) into
+#      GSC_HTML_FILE, and its meta CONTENT token into GSC_HTML_BODY below.
+#   3) Rebuild + sync. The file appears at the site root; click "Verify".
+GSC_HTML_FILE = "google-verify-REPLACE.html"          # REPLACE with Google's file name
+GSC_HTML_BODY = '<meta name="google-site-verification" content="REPLACE_WITH_GSC_TOKEN" />'
+
+# Bing Webmaster Tools (HTML-file method): paste Bing's <meta> snippet content.
+BING_HTML_BODY = '<meta name="msvalidate.01" content="REPLACE_WITH_BING_TOKEN" />'
+
+# IndexNow — instant indexing for Bing/Yandex/Naver/Seznam. No account needed:
+# the key is published at /<key>.txt (below); URLs are pinged after each deploy.
+# Keep this stable — changing it invalidates already-submitted URLs.
+INDEXNOW_KEY = "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+# ---------------------------------------------------------------------------
 # MONETIZATION — paste your real ad snippets here (lenient networks, no strict policy).
 # Leave a key empty ("") to skip that slot. They render only when filled.
 # ---------------------------------------------------------------------------
@@ -223,7 +242,7 @@ def breadcrumb_schema(trail):
             "name":n,"item":u} for i,(n,u) in enumerate(trail)]
     })
 
-def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld=""):
+def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld="", vmeta=""):
     cfg = f'<script>window.__PAGE__={json.dumps(pagecfg or {})};</script>' if pagecfg is not None else ""
     convjs = f'<script src="{BASE}/assets/cats.js"></script><script src="{BASE}/assets/conv.js"></script>' if pagecfg and "cat" in (pagecfg or {}) else ""
     og = (f'<meta property="og:title" content="{title}">'
@@ -240,6 +259,10 @@ def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld
 <meta name="description" content="{desc}">
 <link rel="canonical" href="{canonical}">
 {og}
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{desc}">
+{vmeta}
 <link rel="stylesheet" href="{BASE}/assets/style.css">
 {cfg}{convjs}{extra_head}
 {jsonld({"@context":"https://schema.org","@type":"WebSite","name":"FreeConvert","url":SITE})}
@@ -386,6 +409,30 @@ def write(rel, html):
     os.makedirs(os.path.dirname(p), exist_ok=True)
     with open(p,"w",encoding="utf-8") as f: f.write(html)
 
+def notify_indexnow(urls):
+    """Submit a capped batch of URLs to the IndexNow API (Bing/Yandex/Naver/
+    Seznam). No login required — ownership is proven by the key file at
+    /<INDEXNOW_KEY>.txt (deployed in main()). Best-effort: errors never
+    break the build. The full sitemap is still auto-discovered by crawlers
+    via robots.txt, so this just speeds up first indexing of key pages."""
+    import json, urllib.request
+    batch = urls[:2000]   # seed the most important URLs; rest found via sitemap
+    try:
+        payload = json.dumps({
+            "host": SITE.split("//",1)[1],
+            "key": INDEXNOW_KEY,
+            "keyLocation": f"{SITE}/{INDEXNOW_KEY}.txt",
+            "urlList": batch,
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            "https://api.indexnow.org/indexnow", data=payload,
+            headers={"Content-Type": "application/json; charset=utf-8"},
+            method="POST")
+        urllib.request.urlopen(req, timeout=20)
+        print(f"  IndexNow: submitted {len(batch)} URLs")
+    except Exception as e:
+        print(f"  IndexNow skipped: {e}")
+
 def main():
     # Clean previously generated pages so removed categories/units don't linger
     # (Cloudflare free tier caps ~20k files; stale files would waste that budget).
@@ -394,7 +441,7 @@ def main():
     if os.path.isdir(PUB):
         import shutil
         for name in os.listdir(PUB):
-            if name in ("assets", "monetag_tag.min.js"):
+            if name in ("assets", "monetag_tag.min.js") or name.endswith(".txt") or name.endswith("-verify.html"):
                 continue
             p = os.path.join(PUB, name)
             if os.path.isdir(p): shutil.rmtree(p)
@@ -455,6 +502,24 @@ def main():
     sm=f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \
        "".join(f"<url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n"
     write("sitemap.xml", sm)
+
+    # --- Search-engine verification files (root) -------------------------------
+    # Google Search Console: HTML-file method. Replace GSC_HTML_FILE /
+    # GSC_HTML_BODY above with the values Google shows, then rebuild.
+    # (Skip the placeholder file so we never publish a dummy verify page.)
+    if "REPLACE" not in GSC_HTML_FILE and "REPLACE" not in GSC_HTML_BODY:
+        write(GSC_HTML_FILE, GSC_HTML_BODY + "\n")
+    # Bing Webmaster Tools: HTML-file method.
+    if "REPLACE" not in BING_HTML_BODY:
+        write("bing-verify.html", BING_HTML_BODY + "\n")
+    # IndexNow key file — proves ownership of the key to Bing/Yandex/Naver.
+    # (Deployed as /<KEY>.txt so IndexNow can validate ownership.)
+    write(f"{INDEXNOW_KEY}.txt", INDEXNOW_KEY)
+
+    # --- Instant-index key URLs via IndexNow (no login required) ----------------
+    # Bing/Yandex/Naver/Seznam pick these up immediately; the rest of the
+    # 17k URLs are auto-discovered from sitemap.xml (referenced in robots.txt).
+    notify_indexnow(urls)
 
     print(f"Generated {count} converter pages + {len(CALCS)} calculators + indexes.")
     print(f"Total URLs in sitemap: {len(urls)}")
