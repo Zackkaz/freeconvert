@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://zackkaz.github.io/freeconvert/sitemap.xml

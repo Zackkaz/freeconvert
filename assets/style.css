@@ -1,0 +1,92 @@
+:root{
+  --bg:#0f1320; --card:#171c2e; --card2:#1d2336; --fg:#e8ecf5;
+  --muted:#9aa3bd; --accent:#5b8cff; --accent2:#34d399; --line:#2a3148;
+  --maxw:860px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:var(--fg); -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 18px}
+header.top{
+  position:sticky; top:0; z-index:20; background:rgba(15,19,32,.85);
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+}
+header.top .wrap{display:flex; align-items:center; justify-content:space-between; height:58px}
+.brand{font-weight:800; font-size:20px; letter-spacing:-.3px}
+.brand span{color:var(--accent)}
+nav.top a{margin-left:16px; color:var(--muted); font-size:14px}
+nav.top a:hover{color:var(--fg)}
+.breadcrumb{font-size:13px; color:var(--muted); padding:16px 0 0}
+.breadcrumb a{color:var(--muted)}
+h1{font-size:30px; line-height:1.2; margin:8px 0 6px; letter-spacing:-.5px}
+h2{font-size:21px; margin:34px 0 10px}
+h3{font-size:17px; margin:22px 0 8px}
+p{color:#d4daea}
+.lede{color:var(--muted); font-size:16px; margin:0 0 18px}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:20px; margin:16px 0;
+}
+.conv{background:linear-gradient(180deg,var(--card),var(--card2))}
+.conv .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.conv select,.conv input{
+  background:var(--bg); color:var(--fg); border:1px solid var(--line);
+  border-radius:10px; padding:12px 12px; font-size:16px; min-width:110px;
+}
+.conv input{flex:1; min-width:150px; font-weight:700}
+.conv .eq{font-size:26px; color:var(--muted); padding:0 4px}
+.result{
+  margin-top:14px; font-size:26px; font-weight:800; color:var(--accent2);
+  word-break:break-word;
+}
+.result small{display:block; font-size:14px; color:var(--muted); font-weight:500; margin-top:4px}
+.big{
+  font-size:34px; font-weight:800; color:var(--accent2); margin:6px 0 2px;
+  word-break:break-word;
+}
+table{width:100%; border-collapse:collapse; margin:10px 0; font-size:15px}
+th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line)}
+th{color:var(--muted); font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.4px}
+td a{font-weight:600}
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px}
+.chip{
+  display:block; background:var(--card); border:1px solid var(--line);
+  border-radius:10px; padding:12px 14px; color:var(--fg); font-weight:600;
+}
+.chip:hover{border-color:var(--accent); text-decoration:none; transform:translateY(-1px)}
+.catcards{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin-top:10px}
+.catcard{
+  display:block; background:var(--card); border:1px solid var(--line);
+  border-radius:14px; padding:18px; color:var(--fg);
+}
+.catcard:hover{border-color:var(--accent); text-decoration:none}
+.catcard b{display:block; font-size:18px; margin-bottom:4px}
+.catcard span{color:var(--muted); font-size:14px}
+.faq{margin-top:10px}
+.faq details{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin:8px 0}
+.faq summary{font-weight:600; cursor:pointer}
+.faq p{margin:8px 0 0; color:var(--muted)}
+.ad{
+  margin:18px 0; padding:14px; border:1px dashed var(--line); border-radius:10px;
+  text-align:center; color:var(--muted); font-size:12px; letter-spacing:.5px;
+  background:repeating-linear-gradient(45deg,#141929,#141929 10px,#161c2e 10px,#161c2e 20px);
+}
+footer{border-top:1px solid var(--line); margin-top:40px; padding:24px 0 50px; color:var(--muted); font-size:13px}
+footer .wrap{display:flex; flex-wrap:wrap; gap:14px; justify-content:space-between}
+.calc label{display:block; margin:12px 0 4px; color:var(--muted); font-size:14px}
+.calc input,.calc select{
+  width:100%; background:var(--bg); color:var(--fg); border:1px solid var(--line);
+  border-radius:10px; padding:12px; font-size:16px;
+}
+.btn{
+  margin-top:14px; background:var(--accent); color:#fff; border:0; border-radius:10px;
+  padding:12px 18px; font-size:15px; font-weight:700; cursor:pointer;
+}
+.btn:hover{filter:brightness(1.08)}
+.out{margin-top:14px; font-size:22px; font-weight:800; color:var(--accent2)}
+@media(max-width:560px){h1{font-size:24px} .big{font-size:28px}}
