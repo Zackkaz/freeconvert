@@ -15,7 +15,10 @@ import os, json, math, datetime
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PUB  = os.path.join(ROOT, "public")
-SITE = "https://freeconvert.pages.dev"   # swap for your custom domain later
+# Deployment base path. GitHub Pages project sites serve at /<repo>/, so set
+# BASE to "/freeconvert". For a custom domain or Cloudflare Pages root, use "".
+BASE = "/freeconvert"
+SITE = "https://zackkaz.github.io/freeconvert"   # swap if you use a custom domain
 
 # ---------------------------------------------------------------------------
 # MONETIZATION — paste your real ad snippets here (lenient networks, no strict policy).
@@ -205,7 +208,7 @@ def breadcrumb_schema(trail):
 
 def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld=""):
     cfg = f'<script>window.__PAGE__={json.dumps(pagecfg or {})};</script>' if pagecfg is not None else ""
-    convjs = '<script src="/assets/cats.js"></script><script src="/assets/conv.js"></script>' if pagecfg and "cat" in (pagecfg or {}) else ""
+    convjs = f'<script src="{BASE}/assets/cats.js"></script><script src="{BASE}/assets/conv.js"></script>' if pagecfg and "cat" in (pagecfg or {}) else ""
     og = (f'<meta property="og:title" content="{title}">'
           f'<meta property="og:description" content="{desc}">'
           f'<meta property="og:type" content="website">'
@@ -219,18 +222,18 @@ def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld
 <meta name="description" content="{desc}">
 <link rel="canonical" href="{canonical}">
 {og}
-<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="{BASE}/assets/style.css">
 {cfg}{convjs}{extra_head}
 {jsonld({"@context":"https://schema.org","@type":"WebSite","name":"FreeConvert","url":SITE})}
 {extra_jsonld}
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="/">Free<span>Convert</span></a>
+  <a class="brand" href="{BASE}/">Free<span>Convert</span></a>
   <nav class="top">
-    <a href="/">Home</a>
-    <a href="/#categories">Converters</a>
-    <a href="/#calc">Calculators</a>
+    <a href="{BASE}/">Home</a>
+    <a href="{BASE}/#categories">Converters</a>
+    <a href="{BASE}/#calc">Calculators</a>
   </nav>
 </div></header>
 <main class="wrap">
@@ -238,7 +241,7 @@ def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld
 </main>
 <footer><div class="wrap">
   <div>© {datetime.date.today().year} FreeConvert — free unit converters & calculators.</div>
-  <div><a href="/sitemap.xml">Sitemap</a> · <a href="/robots.txt">Robots</a></div>
+  <div><a href="{BASE}/sitemap.xml">Sitemap</a> · <a href="{BASE}/robots.txt">Robots</a></div>
 </div></footer>
 </body>
 </html>"""
@@ -272,7 +275,7 @@ def pair_page(cat, frm, to):
     c = next(x for x in CATS if x["slug"]==cat)
     title = f"{UNM[cat][frm]} to {UNM[cat][to]} — Convert {c['name']}"
     desc  = f"Free {UNM[cat][frm]} to {UNM[cat][to]} converter. Exact {c['name'].lower()} conversion with a live calculator and common values."
-    rows="".join(f'<tr><td><a href="/{cat}/{frm}-to-{to}/{v}/">{fmt(v)} {SYM[cat][frm]}</a></td><td>{fmt(convert(cat,frm,to,v))} {SYM[cat][to]}</td></tr>' for v in [1,5,10,50,100])
+    rows="".join(f'<tr><td><a href="{BASE}/{cat}/{frm}-to-{to}/{v}/">{fmt(v)} {SYM[cat][frm]}</a></td><td>{fmt(convert(cat,frm,to,v))} {SYM[cat][to]}</td></tr>' for v in [1,5,10,50,100])
     table=f'<table><thead><tr><th>Value</th><th>{UNM[cat][to]} ({SYM[cat][to]})</th></tr></thead><tbody>{rows}</tbody></table>'
     faq="".join(f'<details><summary>{q}</summary><p>{a}</p></details>' for q,a in c["faqs"])
     faq_json = jsonld({"@context":"https://schema.org","@type":"FAQPage",
@@ -290,7 +293,7 @@ def pair_page(cat, frm, to):
 {ad_slot("monetag_smartlink")}
 <h2>More {c['name']} converters</h2>
 <div class="grid">''' + "".join(
-        f'<a class="chip" href="/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm
+        f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm
     ) + "</div>"
     return page(title,desc,body, SITE+f"/{cat}/{frm}-to-{to}/",
                 pagecfg={"cat":cat,"from":frm,"to":to}, extra_jsonld=breadcrumb_schema(trail)+faq_json)
@@ -300,7 +303,7 @@ def longtail_page(cat,frm,to,val):
     r = convert(cat,frm,to,val)
     title = f"{fmt(val)} {SYM[cat][frm]} to {SYM[cat][to]} | {UNM[cat][frm]} in {UNM[cat][to]}"
     desc  = f"{fmt(val)} {SYM[cat][frm]} = {fmt(r)} {SYM[cat][to]}. Free {c['name'].lower()} converter with exact result and related values."
-    others="".join(f'<a class="chip" href="/{cat}/{frm}-to-{to}/{v}/">{fmt(v)} {SYM[cat][frm]}</a>' for v in PRESETS if v!=val)
+    others="".join(f'<a class="chip" href="{BASE}/{cat}/{frm}-to-{to}/{v}/">{fmt(v)} {SYM[cat][frm]}</a>' for v in PRESETS if v!=val)
     trail=[("Home",SITE+"/"),(c["name"],SITE+f"/{cat}/"),(f"{UNM[cat][frm]} to {UNM[cat][to]}",SITE+f"/{cat}/{frm}-to-{to}/"),(f"{fmt(val)} {SYM[cat][frm]}",SITE+f"/{cat}/{frm}-to-{to}/{val}/")]
     body = f'''{breadcrumb_html(trail)}
 <h1>{fmt(val)} {SYM[cat][frm]} to {SYM[cat][to]}</h1>
@@ -312,7 +315,7 @@ def longtail_page(cat,frm,to,val):
 <div class="grid">{others}</div>
 <h2>Related {c['name']} converters</h2>
 <div class="grid">''' + "".join(
-        f'<a class="chip" href="/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm
+        f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm
     ) + "</div>"
     return page(title,desc,body, SITE+f"/{cat}/{frm}-to-{to}/{val}/",
                 pagecfg={"cat":cat,"from":frm,"to":to,"preset":val}, extra_jsonld=breadcrumb_schema(trail))
@@ -326,7 +329,7 @@ def calc_page(slug, title, desc, fields, button, fn, out_id):
 <div class="out" id="{out_id}"></div>
 </div>{ad_slot("adsterra_native")}
 <h2>How it works</h2><p>{desc} This free calculator runs entirely in your browser — no data leaves your device.</p>'''
-    return page(title,desc,body, SITE+f"/calculators/{slug}/", extra_head='<script src="/assets/calc.js"></script>')
+    return page(title,desc,body, SITE+f"/calculators/{slug}/", extra_head=f'<script src="{BASE}/assets/calc.js"></script>')
 
 CALCS = [
   ("percentage","Percentage Calculator","Find what a percentage of a number is, instantly.",
@@ -380,9 +383,9 @@ def main():
 
     # homepage
     catcards="".join(
-        f'<a class="catcard" href="/{c["slug"]}/"><b>{c["name"]}</b><span>{len(c["units"])} units · {len(c["units"])*(len(c["units"])-1)} conversions</span></a>'
+        f'<a class="catcard" href="{BASE}/{c["slug"]}/"><b>{c["name"]}</b><span>{len(c["units"])} units · {len(c["units"])*(len(c["units"])-1)} conversions</span></a>'
         for c in CATS)
-    calchome="".join(f'<a class="chip" href="/calculators/{s}/">{t}</a>' for s,t,_,_,_,_,_ in CALCS)
+    calchome="".join(f'<a class="chip" href="{BASE}/calculators/{s}/">{t}</a>' for s,t,_,_,_,_,_ in CALCS)
     home=f'''<h1>Free Unit Converters & Calculators</h1>
 <p class="lede">Fast, accurate, free converters for length, weight, temperature, volume, digital storage and more — plus everyday calculators. No sign-up.</p>
 {ad_slot("propeller_onclick")}
@@ -399,7 +402,7 @@ def main():
 
     for c in CATS:
         cat=c["slug"]; units=c["units"]
-        chips="".join(f'<a class="chip" href="/{cat}/{u[0]}-to-{units[1][0]}/">{u[2]} → {units[1][2]}</a>' for u in units)
+        chips="".join(f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{units[1][0]}/">{u[2]} → {units[1][2]}</a>' for u in units)
         idx=f'''<h1>{c["name"]} Converters</h1>
 <p class="lede">{c["intro"]}</p>
 <div class="grid">{chips}</div>
