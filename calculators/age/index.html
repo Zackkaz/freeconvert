@@ -11,6 +11,14 @@
 <script src="/freeconvert/assets/calc.js"></script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "FreeConvert", "url": "https://zackkaz.github.io/freeconvert"}</script>
 
+<script>
+// Monetag service-worker push registration (file lives at BASE+/sw.js)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("/freeconvert/sw.js").catch(function(e){});
+  });
+}
+</script>
 </head>
 <body>
 <header class="top"><div class="wrap">

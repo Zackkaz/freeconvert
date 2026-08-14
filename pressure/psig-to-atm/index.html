@@ -11,6 +11,14 @@
 <script>window.__PAGE__={"cat": "pressure", "from": "psig", "to": "atm"};</script><script src="/freeconvert/assets/cats.js"></script><script src="/freeconvert/assets/conv.js"></script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "FreeConvert", "url": "https://zackkaz.github.io/freeconvert"}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://zackkaz.github.io/freeconvert/"}, {"@type": "ListItem", "position": 2, "name": "Pressure", "item": "https://zackkaz.github.io/freeconvert/pressure/"}, {"@type": "ListItem", "position": 3, "name": "PSI gauge to Atmospheres", "item": "https://zackkaz.github.io/freeconvert/pressure/psig-to-atm/"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How many kPa in 1 bar?", "acceptedAnswer": {"@type": "Answer", "text": "1 bar = 100 kPa = 100,000 Pa."}}, {"@type": "Question", "name": "What is 1 atm in psi?", "acceptedAnswer": {"@type": "Answer", "text": "1 atmosphere = 14.6959 psi."}}]}</script>
+<script>
+// Monetag service-worker push registration (file lives at BASE+/sw.js)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("/freeconvert/sw.js").catch(function(e){});
+  });
+}
+</script>
 </head>
 <body>
 <header class="top"><div class="wrap">
