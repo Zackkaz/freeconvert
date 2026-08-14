@@ -331,9 +331,13 @@ def write(rel, html):
 def main():
     # Clean previously generated pages so removed categories/units don't linger
     # (Cloudflare free tier caps ~20k files; stale files would waste that budget).
+    # PRESERVE assets/ — it holds hand-written, git-tracked CSS/JS that build.py
+    # does not regenerate, so wiping it would break every page's styling/JS.
     if os.path.isdir(PUB):
         import shutil
         for name in os.listdir(PUB):
+            if name == "assets":
+                continue
             p = os.path.join(PUB, name)
             if os.path.isdir(p): shutil.rmtree(p)
             else: os.remove(p)
