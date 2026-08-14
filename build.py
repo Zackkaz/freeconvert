@@ -31,11 +31,11 @@ self.lary = ""
 importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw')
 '''
 
-# Monetag "Superior tag" — injected immediately after <head> on every page.
-# (Instructed by user: zone 270206. NOTE: src="" looks incomplete — Monetag
-# normally serves the loader from its own domain; keep as given, revisit if
-# the tag never fires.)
-MONETAG_HEAD_TAG = '<script src="" data-zone="270206" async data-cfasync="false"></script>'
+# Monetag "Superior tag" loader, self-hosted at the site root so the
+# data-zone script actually loads (the dashboard snippet ships with src=""
+# which loads nothing). The loader reads data-zone from its own <script> tag.
+MONETAG_TAG_FILE = "monetag_tag.min.js"
+MONETAG_HEAD_TAG = f'<script src="{BASE}/{MONETAG_TAG_FILE}" data-zone="270206" async data-cfasync="false"></script>'
 
 # ---------------------------------------------------------------------------
 # MONETIZATION — paste your real ad snippets here (lenient networks, no strict policy).
@@ -394,7 +394,7 @@ def main():
     if os.path.isdir(PUB):
         import shutil
         for name in os.listdir(PUB):
-            if name == "assets":
+            if name in ("assets", "monetag_tag.min.js"):
                 continue
             p = os.path.join(PUB, name)
             if os.path.isdir(p): shutil.rmtree(p)
@@ -407,6 +407,8 @@ def main():
         for c in CATS}, ensure_ascii=False) + ";"
     write("assets/cats.js", catjs)
     write("sw.js", MONETAG_SW)   # Monetag service-worker push (regenerated each build)
+    write(MONETAG_TAG_FILE, open(os.path.join(ROOT, MONETAG_TAG_FILE), encoding="utf-8").read())
+                 # Monetag "Superior tag" loader, self-hosted (regenerated each build)
 
     # homepage
     catcards="".join(
