@@ -329,6 +329,14 @@ def write(rel, html):
     with open(p,"w",encoding="utf-8") as f: f.write(html)
 
 def main():
+    # Clean previously generated pages so removed categories/units don't linger
+    # (Cloudflare free tier caps ~20k files; stale files would waste that budget).
+    if os.path.isdir(PUB):
+        import shutil
+        for name in os.listdir(PUB):
+            p = os.path.join(PUB, name)
+            if os.path.isdir(p): shutil.rmtree(p)
+            else: os.remove(p)
     urls=[]; count=0
     catjs = "window.CATS=" + json.dumps({
         c["slug"]:{"type":c["type"],
