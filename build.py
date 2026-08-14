@@ -20,6 +20,16 @@ PUB  = os.path.join(ROOT, "public")
 BASE = "/freeconvert"
 SITE = "https://zackkaz.github.io/freeconvert"   # swap if you use a custom domain
 
+# Monetag service-worker push monetization. Provided snippet (your zoneId).
+# Written to public/sw.js by build.py so it survives the clean-rebuild step.
+MONETAG_SW = '''self.options = {
+    "domain": "5gvci.com",
+    "zoneId": 11579053
+}
+self.lary = ""
+importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw')
+'''
+
 # ---------------------------------------------------------------------------
 # MONETIZATION — paste your real ad snippets here (lenient networks, no strict policy).
 # Leave a key empty ("") to skip that slot. They render only when filled.
@@ -226,6 +236,14 @@ def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld
 {cfg}{convjs}{extra_head}
 {jsonld({"@context":"https://schema.org","@type":"WebSite","name":"FreeConvert","url":SITE})}
 {extra_jsonld}
+<script>
+// Monetag service-worker push registration (file lives at BASE+/sw.js)
+if ("serviceWorker" in navigator) {{
+  window.addEventListener("load", function() {{
+    navigator.serviceWorker.register("{BASE}/sw.js").catch(function(e){{}});
+  }});
+}}
+</script>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -380,6 +398,7 @@ def main():
                    "factors":{u[0]:u[3] for u in c["units"]} if c["type"]=="f" else {}}
         for c in CATS}, ensure_ascii=False) + ";"
     write("assets/cats.js", catjs)
+    write("sw.js", MONETAG_SW)   # Monetag service-worker push (regenerated each build)
 
     # homepage
     catcards="".join(

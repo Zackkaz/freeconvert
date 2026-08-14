@@ -11,6 +11,14 @@
 <script>window.__PAGE__={"cat": "volume", "from": "cubic-meter", "to": "pint-us"};</script><script src="/freeconvert/assets/cats.js"></script><script src="/freeconvert/assets/conv.js"></script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "FreeConvert", "url": "https://zackkaz.github.io/freeconvert"}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://zackkaz.github.io/freeconvert/"}, {"@type": "ListItem", "position": 2, "name": "Volume", "item": "https://zackkaz.github.io/freeconvert/volume/"}, {"@type": "ListItem", "position": 3, "name": "Cubic meters to US pints", "item": "https://zackkaz.github.io/freeconvert/volume/cubic-meter-to-pint-us/"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How many ml in a US cup?", "acceptedAnswer": {"@type": "Answer", "text": "1 US cup = 236.588 ml."}}, {"@type": "Question", "name": "How many liters in a gallon?", "acceptedAnswer": {"@type": "Answer", "text": "1 US gallon = 3.78541 liters; 1 UK gallon = 4.54609 liters."}}]}</script>
+<script>
+// Monetag service-worker push registration (file lives at BASE+/sw.js)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("/freeconvert/sw.js").catch(function(e){});
+  });
+}
+</script>
 </head>
 <body>
 <header class="top"><div class="wrap">
