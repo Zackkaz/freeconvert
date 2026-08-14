@@ -6,6 +6,10 @@ Zero dependencies. Produces thousands of SEO'd, plain-HTML converter + calculato
 pages into ./public, ready to deploy free on Cloudflare Pages.
 
 Run:  python3 build.py
+
+MONETIZATION: fill in your publisher snippets in the ADS dict below, then rebuild.
+All three networks have no/minimum traffic requirements (Adsterra instant, PropellerAds
+fast, Monetag 1-2 days). Each page already has ad slots wired to these.
 """
 import os, json, math, datetime
 
@@ -14,7 +18,20 @@ PUB  = os.path.join(ROOT, "public")
 SITE = "https://freeconvert.pages.dev"   # swap for your custom domain later
 
 # ---------------------------------------------------------------------------
-# Category definitions.  type 'f' = factor-to-base, 't' = temperature, 'fuel'
+# MONETIZATION — paste your real ad snippets here (lenient networks, no strict policy).
+# Leave a key empty ("") to skip that slot. They render only when filled.
+# ---------------------------------------------------------------------------
+ADS = {
+    # Adsterra: get code from adsterra.com -> Websites -> your site -> Native Banner / Social Bar
+    "adsterra_native":  "",
+    # PropellerAds: propellerads.com -> your site -> OnClick / Interstitial / Push notification
+    "propeller_onclick": "",
+    # Monetag: monetag.com -> your site -> SmartLink (great for global/Global-South traffic)
+    "monetag_smartlink": "",
+}
+
+# ---------------------------------------------------------------------------
+# Category definitions.  type 'f' = factor-to-base, 't' = temperature.
 # Units: s=slug, y=symbol, n=name, f=factor to base unit.
 # ---------------------------------------------------------------------------
 CATS = [
@@ -54,8 +71,7 @@ CATS = [
   {"slug":"speed","name":"Speed","type":"f","intro":"Convert km/h, mph, knots, m/s and ft/s for travel, weather and physics.",
    "units":[("kmh","km/h","Kilometers per hour",0.277777778),("mph","mph","Miles per hour",0.44704),
             ("knot","kn","Knots",0.514444444),("mps","m/s","Meters per second",1),("fps","ft/s","Feet per second",0.3048),
-            ("kph-imperial","kph","Kilometers per hour (imp)",0.277777778),("c","c","Speed of light",299792458),
-            ("mach","mach","Mach (sea level)",340.29),("cmps","cm/s","Centimeters per second",0.01)],
+            ("c","c","Speed of light",299792458),("mach","mach","Mach (sea level)",340.29),("cmps","cm/s","Centimeters per second",0.01)],
    "faqs":[("How many mph in 100 km/h?","100 km/h = 62.1371 mph."),
            ("What is 1 knot in km/h?","1 knot = 1.852 km/h.")]},
 
@@ -86,7 +102,7 @@ CATS = [
    "units":[("pascal","Pa","Pascals",1),("kilopascal","kPa","Kilopascals",1000),("bar","bar","Bar",100000),
             ("psi","psi","Pounds per sq inch",6894.75729),("atm","atm","Atmospheres",101325),
             ("torr","Torr","Torr",133.322368),("mmhg","mmHg","Millimeters of mercury",133.322368),
-            ("megapascal","MPa","Megapascals",1e6),("psi-gauge","psig","PSI gauge",6894.75729)],
+            ("megapascal","MPa","Megapascals",1e6),("psig","psig","PSI gauge",6894.75729)],
    "faqs":[("How many kPa in 1 bar?","1 bar = 100 kPa = 100,000 Pa."),
            ("What is 1 atm in psi?","1 atmosphere = 14.6959 psi.")]},
 
@@ -134,22 +150,37 @@ def fmt(x):
     else:
         s = f"{x:.6f}".rstrip("0").rstrip(".")
     intp,_,dec = s.partition(".")
-    intp = f"{float(intp):,.0f}".replace(".00","") if False else (intp[0]+intp[1:].replace(",","")) if False else intp
     try:
         intp = f"{int(intp):,}"
     except ValueError:
-        intp = intp
+        pass
     return intp + (("."+dec) if dec else "")
 
 SYM = {c["slug"]:{u[0]:u[1] for u in c["units"]} for c in CATS}
 UNM = {c["slug"]:{u[0]:u[2] for u in c["units"]} for c in CATS}
+def CATS_name(slug): return next(c["name"] for c in CATS if c["slug"]==slug)
 
 # ---------------------------------------------------------------------------
-# HTML helpers
+# HTML helpers (all internal links/assets are ROOT-ABSOLUTE so any depth works)
 # ---------------------------------------------------------------------------
-def page(title, desc, body, path_prefix="../", cat=None, pagecfg=None, extra_head=""):
+def jsonld(obj):
+    return '<script type="application/ld+json">'+json.dumps(obj,ensure_ascii=False)+'</script>'
+
+def breadcrumb_schema(trail):
+    # trail: list of (name, url)
+    return jsonld({
+        "@context":"https://schema.org","@type":"BreadcrumbList",
+        "itemListElement":[ {"@type":"ListItem","position":i+1,
+            "name":n,"item":u} for i,(n,u) in enumerate(trail)]
+    })
+
+def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld=""):
     cfg = f'<script>window.__PAGE__={json.dumps(pagecfg or {})};</script>' if pagecfg is not None else ""
-    catsjs = '<script src="../assets/cats.js"></script><script src="../assets/conv.js"></script>' if cat else ""
+    convjs = '<script src="/assets/cats.js"></script><script src="/assets/conv.js"></script>' if pagecfg and "cat" in (pagecfg or {}) else ""
+    og = (f'<meta property="og:title" content="{title}">'
+          f'<meta property="og:description" content="{desc}">'
+          f'<meta property="og:type" content="website">'
+          f'<meta property="og:url" content="{canonical}">')
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -157,16 +188,20 @@ def page(title, desc, body, path_prefix="../", cat=None, pagecfg=None, extra_hea
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
 <meta name="description" content="{desc}">
-<link rel="stylesheet" href="{path_prefix}assets/style.css">
-{cfg}{catsjs}
+<link rel="canonical" href="{canonical}">
+{og}
+<link rel="stylesheet" href="/assets/style.css">
+{cfg}{convjs}{extra_head}
+{jsonld({"@context":"https://schema.org","@type":"WebSite","name":"FreeConvert","url":SITE})}
+{extra_jsonld}
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="{path_prefix}">Free<span>Convert</span></a>
+  <a class="brand" href="/">Free<span>Convert</span></a>
   <nav class="top">
-    <a href="{path_prefix}">Home</a>
-    <a href="{path_prefix}#categories">Converters</a>
-    <a href="{path_prefix}#calc">Calculators</a>
+    <a href="/">Home</a>
+    <a href="/#categories">Converters</a>
+    <a href="/#calc">Calculators</a>
   </nav>
 </div></header>
 <main class="wrap">
@@ -174,13 +209,17 @@ def page(title, desc, body, path_prefix="../", cat=None, pagecfg=None, extra_hea
 </main>
 <footer><div class="wrap">
   <div>© {datetime.date.today().year} FreeConvert — free unit converters & calculators.</div>
-  <div><a href="{path_prefix}sitemap.xml">Sitemap</a> · <a href="{path_prefix}robots.txt">Robots</a></div>
+  <div><a href="/sitemap.xml">Sitemap</a> · <a href="/robots.txt">Robots</a></div>
 </div></footer>
 </body>
 </html>"""
 
-def ad_slot():
-    return '<div class="ad">AD SPACE — Adsterra / PropellerAds / Monetag code goes here</div>'
+def ad_slot(kind):
+    code = ADS.get(kind,"")
+    if code.strip():
+        return f'<div class="ad">{code}</div>'
+    # visible placeholder until a real snippet is pasted (renders harmlessly)
+    return f'<div class="ad">AD: {kind} — paste snippet in build.py ADS["{kind}"]</div>'
 
 # ---------------------------------------------------------------------------
 # Page builders
@@ -196,76 +235,69 @@ def converter_card(cat, frm, to, preset=None):
   <div class="result" id="res">—</div>
 </div>'''
 
-def breadcrumb(cat, frm=None, to=None, val=None):
-    b = f'<a href="../">Home</a> › <a href="../{cat}/">{CATS_name(cat)}</a>'
-    if frm and to:
-        if val is not None:
-            b += f' › {val} {SYM[cat][frm]} to {SYM[cat][to]}'
-        else:
-            b += f' › {UNM[cat][frm]} to {UNM[cat][to]}'
-    return f'<div class="breadcrumb">{b}</div>'
-
-def CATS_name(slug): return next(c["name"] for c in CATS if c["slug"]==slug)
+def breadcrumb_html(trail):
+    return '<div class="breadcrumb">'+ " › ".join(
+        f'<a href="{u}">{n}</a>' if i>0 else f'<a href="{u}">{n}</a>' for i,(n,u) in enumerate(trail))+'</div>'
 
 def pair_page(cat, frm, to):
     c = next(x for x in CATS if x["slug"]==cat)
     title = f"{UNM[cat][frm]} to {UNM[cat][to]} — Convert {c['name']}"
     desc  = f"Free {UNM[cat][frm]} to {UNM[cat][to]} converter. Exact {c['name'].lower()} conversion with a live calculator and common values."
-    # common values table
-    rows=[]
-    for v in [1,5,10,50,100]:
-        r=fmt(convert(cat,frm,to,v))
-        rows.append(f'<tr><td><a href="{v}/">{fmt(v)} {SYM[cat][frm]}</a></td><td>{r} {SYM[cat][to]}</td></tr>')
-    table='<table><thead><tr><th>Value</th><th>{to} ({sym})</th></tr></thead><tbody>{rows}</tbody></table>'.format(
-        to=UNM[cat][to], sym=SYM[cat][to], rows="".join(rows))
-    faq=''.join(f'<details><summary>{q}</summary><p>{a}</p></details>' for q,a in c["faqs"])
-    body = f'''{breadcrumb(cat,frm,to)}
+    rows="".join(f'<tr><td><a href="/{cat}/{frm}-to-{to}/{v}/">{fmt(v)} {SYM[cat][frm]}</a></td><td>{fmt(convert(cat,frm,to,v))} {SYM[cat][to]}</td></tr>' for v in [1,5,10,50,100])
+    table=f'<table><thead><tr><th>Value</th><th>{UNM[cat][to]} ({SYM[cat][to]})</th></tr></thead><tbody>{rows}</tbody></table>'
+    faq="".join(f'<details><summary>{q}</summary><p>{a}</p></details>' for q,a in c["faqs"])
+    faq_json = jsonld({"@context":"https://schema.org","@type":"FAQPage",
+        "mainEntity":[{"@type":"Question","name":q,"acceptedAnswer":{"@type":"Answer","text":a}} for q,a in c["faqs"]]})
+    trail=[("Home",SITE+"/"),(c["name"],SITE+f"/{cat}/"),(f"{UNM[cat][frm]} to {UNM[cat][to]}",SITE+f"/{cat}/{frm}-to-{to}/")]
+    body = f'''{breadcrumb_html(trail)}
 <h1>{UNM[cat][frm]} to {UNM[cat][to]}</h1>
 <p class="lede">{desc}</p>
 {converter_card(cat,frm,to)}
-{ad_slot()}
+{ad_slot("adsterra_native")}
 <h2>Common {UNM[cat][frm]} to {UNM[cat][to]} conversions</h2>
 {table}
 <h2>Frequently asked questions</h2>
 <div class="faq">{faq}</div>
-{ad_slot()}
+{ad_slot("monetag_smartlink")}
 <h2>More {c['name']} converters</h2>
 <div class="grid">''' + "".join(
-        f'<a class="chip" href="../{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm
+        f'<a class="chip" href="/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm
     ) + "</div>"
-    return page(title,desc,body,"../",cat,{"cat":cat,"from":frm,"to":to})
+    return page(title,desc,body, SITE+f"/{cat}/{frm}-to-{to}/",
+                pagecfg={"cat":cat,"from":frm,"to":to}, extra_jsonld=breadcrumb_schema(trail)+faq_json)
 
 def longtail_page(cat,frm,to,val):
     c = next(x for x in CATS if x["slug"]==cat)
     r = convert(cat,frm,to,val)
     title = f"{fmt(val)} {SYM[cat][frm]} to {SYM[cat][to]} | {UNM[cat][frm]} in {UNM[cat][to]}"
     desc  = f"{fmt(val)} {SYM[cat][frm]} = {fmt(r)} {SYM[cat][to]}. Free {c['name'].lower()} converter with exact result and related values."
-    others="".join(f'<a class="chip" href="../{v}/">{fmt(v)} {SYM[cat][frm]}</a>' for v in PRESETS if v!=val)
-    # inverse quick
-    body = f'''{breadcrumb(cat,frm,to,val)}
+    others="".join(f'<a class="chip" href="/{cat}/{frm}-to-{to}/{v}/">{fmt(v)} {SYM[cat][frm]}</a>' for v in PRESETS if v!=val)
+    trail=[("Home",SITE+"/"),(c["name"],SITE+f"/{cat}/"),(f"{UNM[cat][frm]} to {UNM[cat][to]}",SITE+f"/{cat}/{frm}-to-{to}/"),(f"{fmt(val)} {SYM[cat][frm]}",SITE+f"/{cat}/{frm}-to-{to}/{val}/")]
+    body = f'''{breadcrumb_html(trail)}
 <h1>{fmt(val)} {SYM[cat][frm]} to {SYM[cat][to]}</h1>
 <p class="lede">{fmt(val)} {SYM[cat][frm]} equals:</p>
 <div class="big">{fmt(r)} {SYM[cat][to]}</div>
 {converter_card(cat,frm,to,val)}
-{ad_slot()}
+{ad_slot("adsterra_native")}
 <h2>Other {UNM[cat][frm]} values in {UNM[cat][to]}</h2>
 <div class="grid">{others}</div>
 <h2>Related {c['name']} converters</h2>
 <div class="grid">''' + "".join(
-        f'<a class="chip" href="../../{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm
+        f'<a class="chip" href="/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm
     ) + "</div>"
-    return page(title,desc,body,"../",cat,{"cat":cat,"from":frm,"to":to,"preset":val})
+    return page(title,desc,body, SITE+f"/{cat}/{frm}-to-{to}/{val}/",
+                pagecfg={"cat":cat,"from":frm,"to":to,"preset":val}, extra_jsonld=breadcrumb_schema(trail))
 
 def calc_page(slug, title, desc, fields, button, fn, out_id):
     flds="".join(f'<label>{lab}</label>{inp}' for lab,inp in fields)
     body=f'''<h1>{title}</h1>
 <p class="lede">{desc}</p>
 <div class="card calc">{flds}
-<button class="btn" onclick="runCalc({fn},'{out_id}')">{button}</button>
+<button class="btn" onclick="runCalc({fn},\'{out_id}\')">{button}</button>
 <div class="out" id="{out_id}"></div>
-</div>{ad_slot()}
+</div>{ad_slot("adsterra_native")}
 <h2>How it works</h2><p>{desc} This free calculator runs entirely in your browser — no data leaves your device.</p>'''
-    return page(title,desc,body,"../",extra_head='<script src="../assets/calc.js"></script>')
+    return page(title,desc,body, SITE+f"/calculators/{slug}/", extra_head='<script src="/assets/calc.js"></script>')
 
 CALCS = [
   ("percentage","Percentage Calculator","Find what a percentage of a number is, instantly.",
@@ -298,7 +330,6 @@ def write(rel, html):
 
 def main():
     urls=[]; count=0
-    # cats.js dataset for client-side
     catjs = "window.CATS=" + json.dumps({
         c["slug"]:{"type":c["type"],
                    "units":[{"s":u[0],"y":u[1],"n":u[2]} for u in c["units"]],
@@ -308,55 +339,45 @@ def main():
 
     # homepage
     catcards="".join(
-        f'<a class="catcard" href="{c["slug"]}/"><b>{c["name"]}</b><span>{len(c["units"])} units · {len(c["units"])*(len(c["units"])-1)} conversions</span></a>'
+        f'<a class="catcard" href="/{c["slug"]}/"><b>{c["name"]}</b><span>{len(c["units"])} units · {len(c["units"])*(len(c["units"])-1)} conversions</span></a>'
         for c in CATS)
-    calchome="".join(f'<a class="chip" href="calculators/{s}/">{t}</a>' for s,t,_,_,_,_,_ in CALCS)
+    calchome="".join(f'<a class="chip" href="/calculators/{s}/">{t}</a>' for s,t,_,_,_,_,_ in CALCS)
     home=f'''<h1>Free Unit Converters & Calculators</h1>
 <p class="lede">Fast, accurate, free converters for length, weight, temperature, volume, digital storage and more — plus everyday calculators. No sign-up.</p>
-{ad_slot()}
+{ad_slot("propeller_onclick")}
 <h2 id="categories">Converters</h2>
 <div class="catcards">{catcards}</div>
 <h2 id="calc">Calculators</h2>
 <div class="grid">{calchome}</div>
-{ad_slot()}
+{ad_slot("adsterra_native")}
 <h2>Why FreeConvert</h2>
 <p>Every page is generated with exact math and loads instantly on any device. Perfect for students, cooks, engineers and travelers.</p>'''
     write("index.html", page("FreeConvert — Free Unit Converters & Calculators",
-        "Free, fast unit converters (length, weight, temperature, volume, digital storage) and everyday calculators. Exact results, no sign-up.", home, "./"))
+        "Free, fast unit converters (length, weight, temperature, volume, digital storage) and everyday calculators. Exact results, no sign-up.", home, SITE+"/"))
     urls.append(SITE+"/")
 
-    # category indexes + pair pages + long-tail
     for c in CATS:
         cat=c["slug"]; units=c["units"]
-        # index
-        chips="".join(f'<a class="chip" href="{u[0]}-to-{(units[1][0])}/">{u[2]} → {units[1][2]}</a>' for u in units)
+        chips="".join(f'<a class="chip" href="/{cat}/{u[0]}-to-{units[1][0]}/">{u[2]} → {units[1][2]}</a>' for u in units)
         idx=f'''<h1>{c["name"]} Converters</h1>
 <p class="lede">{c["intro"]}</p>
 <div class="grid">{chips}</div>
-{ad_slot()}'''
-        write(f"{cat}/index.html", page(f"{c['name']} Converters — FreeConvert",
-            c["intro"], idx, "../"))
+{ad_slot("adsterra_native")}'''
+        write(f"{cat}/index.html", page(f"{c['name']} Converters — FreeConvert", c["intro"], idx, SITE+f"/{cat}/"))
         urls.append(f"{SITE}/{cat}/")
-        # pairs
-        for i,a in enumerate(units):
+        for a in units:
             for b in units:
                 if a[0]==b[0]: continue
-                rel=f"{cat}/{a[0]}-to-{b[0]}/index.html"
-                write(rel, pair_page(cat,a[0],b[0])); count+=1
+                write(f"{cat}/{a[0]}-to-{b[0]}/index.html", pair_page(cat,a[0],b[0])); count+=1
                 urls.append(f"{SITE}/{cat}/{a[0]}-to-{b[0]}/")
-                # long-tail
                 for v in PRESETS:
-                    relv=f"{cat}/{a[0]}-to-{b[0]}/{v}/index.html"
-                    write(relv, longtail_page(cat,a[0],b[0],v)); count+=1
+                    write(f"{cat}/{a[0]}-to-{b[0]}/{v}/index.html", longtail_page(cat,a[0],b[0],v)); count+=1
                     urls.append(f"{SITE}/{cat}/{a[0]}-to-{b[0]}/{v}/")
 
-    # calculators
-    os.makedirs(os.path.join(PUB,"calculators"), exist_ok=True)
     for slug,title,desc,fields,btn,fn,out in CALCS:
         write(f"calculators/{slug}/index.html", calc_page(slug,title,desc,fields,btn,fn,out))
         urls.append(f"{SITE}/calculators/{slug}/")
 
-    # robots + sitemap
     write("robots.txt", f"User-agent: *\nAllow: /\nSitemap: {SITE}/sitemap.xml\n")
     sm=f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \
        "".join(f"<url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n"
