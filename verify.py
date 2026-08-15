@@ -99,9 +99,9 @@ for m in re.findall(r'<script type="application/ld\+json">([^<]*)</script>', blo
         fail("invalid JSON-LD: %s" % e)
 print("JSON-LD valid: OK")
 
-# 8) Sitemap URL count sanity (sitemap_index.xml is the canonical, with <lastmod>)
+# 8) Sitemap URL count sanity (sitemap.xml is the canonical, with <lastmod>)
 import xml.etree.ElementTree as ET
-_smt = os.path.join(PUB, "sitemap_index.xml")
+_smt = os.path.join(PUB, "sitemap.xml")
 _root = ET.parse(_smt).getroot()
 urls = len([e for e in _root.iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")])
 print("sitemap urls:", urls)
