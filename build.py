@@ -288,7 +288,7 @@ if ("serviceWorker" in navigator) {{
 </main>
 <footer><div class="wrap">
   <div>© {datetime.date.today().year} FreeConvert — free unit converters & calculators.</div>
-  <div><a href="{BASE}/sitemap.xml">Sitemap</a> · <a href="{BASE}/robots.txt">Robots</a></div>
+  <div><a href="{BASE}/sitemap_index.xml">Sitemap</a> · <a href="{BASE}/robots.txt">Robots</a></div>
 </div></footer>
 </body>
 </html>"""
@@ -498,21 +498,43 @@ def main():
 
     write("robots.txt", f"""User-agent: *
 Allow: /
-Sitemap: {SITE}/sitemap.xml
+Sitemap: {SITE}/sitemap_index.xml
 
 # Crawl-delay is ignored by Google but helps smaller engines on shared hosting.
 # (GitHub Pages handles load fine; kept conservative for politeness.)
 User-agent: Bingbot
 Crawl-delay: 1
 """)
-    sm=f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \
-       "".join(f"<url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n"
-    write("sitemap.xml", sm)
+    # --- Sitemap (primary: sitemap_index.xml, legacy alias: sitemap.xml) ------
+    # Per John Mueller's guidance on the "couldn't fetch" class of errors, if a
+    # sitemap is valid but GSC still can't fetch it, RENAMING the file often
+    # resolves the stalled fetcher entry. We emit the authoritative file as
+    # sitemap_index.xml and keep sitemap.xml as an HTML-refresh redirect so the
+    # old submission stops 404-ing rather than vanishing.
+    # <lastmod> lets GSC see freshness / only re-crawl changed URLs.
+    from datetime import datetime as _dt
+    _today = _dt.utcnow().strftime("%Y-%m-%d")
+    sm = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \
+         "".join(f'<url><loc>{u}</loc><lastmod>{_today}</lastmod></url>\n' for u in urls) + \
+         "</urlset>\n"
+    write("sitemap_index.xml", sm)
+    # Legacy alias -> redirect to the renamed canonical sitemap (keeps the old
+    # GSC submission from showing "couldn't fetch" while pointing crawlers to
+    # the fresh one).
+    write("sitemap.xml",
+          f'<!DOCTYPE html><html><head>'
+          f'<meta http-equiv="refresh" content="0;url={SITE}/sitemap_index.xml">'
+          f'<meta name="robots" content="noindex, nofollow">'
+          f'<title>Sitemap Redirect</title></head>'
+          f'<body>Sitemap moved to <a href="{SITE}/sitemap_index.xml">sitemap_index.xml</a>.</body></html>')
 
     # --- Search-engine verification files (root) -------------------------------
+    # GSC_HTML_FILE / GSC_HTML_BODY and BING_HTML_BODY are set above with the
+    # real verification tokens. Files are emitted at the site root so the
+    # respective consoles can verify ownership.
     # Google Search Console: HTML-file method. Replace GSC_HTML_FILE /
     # GSC_HTML_BODY above with the values Google shows, then rebuild.
-    # (Skip the placeholder file so we never publish a dummy verify page.)
+    # (Skip emitting if still set to the placeholder token.)
     if "REPLACE" not in GSC_HTML_FILE and "REPLACE" not in GSC_HTML_BODY:
         write(GSC_HTML_FILE, GSC_HTML_BODY + "\n")
     # Bing Webmaster Tools: HTML-file method.

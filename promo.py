@@ -13,7 +13,7 @@ Requires: build.py (for SITE / INDEXNOW_KEY / sitemap path).
 import os, json, sys, urllib.request
 import build  # reuses SITE, INDEXNOW_KEY, PUB
 
-SITEMAP = os.path.join(build.PUB, "sitemap.xml")
+SITEMAP = os.path.join(build.PUB, "sitemap_index.xml")
 BATCH = 10000  # IndexNow allows up to 10k URLs per request
 
 
