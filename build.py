@@ -40,13 +40,11 @@ MONETAG_HEAD_TAG = f'<script src="{BASE}/{MONETAG_TAG_FILE}" data-zone="270206" 
 # ---------------------------------------------------------------------------
 # SEARCH-ENGINE VERIFICATION + INDEXING (root files, generated each build)
 # ---------------------------------------------------------------------------
-# Google Search Console (URL-prefix, HTML-file method):
-#   1) In GSC add property "https://zackkaz.github.io", choose "HTML file".
-#   2) Copy the file NAME Google shows (e.g. google4f3a9c1b2d.html) into
-#      GSC_HTML_FILE, and its meta CONTENT token into GSC_HTML_BODY below.
-#   3) Rebuild + sync. The file appears at the site root; click "Verify".
-GSC_HTML_FILE = "google-verify-REPLACE.html"          # REPLACE with Google's file name
-GSC_HTML_BODY = '<meta name="google-site-verification" content="REPLACE_WITH_GSC_TOKEN" />'
+# Google Search Console — HTML-file verification.
+# The file below (name + exact body) is what Google's "HTML file" method
+# downloads. It is served at the site root; GSC fetches it to verify ownership.
+GSC_HTML_FILE = "google3fdc88e71d84c4d8.html"
+GSC_HTML_BODY = "google-site-verification: google3fdc88e71d84c4d8.html"
 
 # Bing Webmaster Tools (HTML-file method): paste Bing's <meta> snippet content.
 BING_HTML_BODY = '<meta name="msvalidate.01" content="REPLACE_WITH_BING_TOKEN" />'
