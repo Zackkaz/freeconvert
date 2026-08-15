@@ -505,18 +505,28 @@ Sitemap: {SITE}/sitemap.xml
 User-agent: Bingbot
 Crawl-delay: 1
 """)
-    # --- Sitemap (sitemap.xml is the canonical) ----------------------------------------
-    # Google Search Console: submit "sitemap.xml" - it must serve XML, not HTML.
-    # John Mueller's "rename" tip applies when a sitemap is stuck in a fetcher queue;
-    # if the URL was submitted, keep it valid and let the queue clear naturally.
-    # <lastmod> helps GSC only re-crawl URLs that changed.
+    # --- Sitemap: index + chunked child sitemaps (fixes GSC "couldn't fetch") ---
+    # A single 17k-URL sitemap (~1.4 MB) can time out in GSC's fetcher. The
+    # protocol-correct solution: a sitemap INDEX (small) at sitemap.xml that
+    # references child sitemaps of ~2000 URLs each. GSC fetches the tiny index,
+    # then pulls each small chunk quickly. Submit sitemap.xml (the index).
     from datetime import datetime as _dt
     _today = _dt.utcnow().strftime("%Y-%m-%d")
-    sm = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \
-         "".join(f'<url><loc>{u}</loc><lastmod>{_today}</lastmod></url>\n' for u in urls) + \
-         "</urlset>\n"
-    write("sitemap.xml", sm)
-    # sitemap_index.xml is an alternative alias (useful if you ever change the primary)
+    _chunk = 2000
+    # 1. child sitemaps
+    for i in range(0, len(urls), _chunk):
+        part = urls[i:i + _chunk]
+        sm_child = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \
+            "".join(f'<url><loc>{u}</loc><lastmod>{_today}</lastmod></url>\n' for u in part) + \
+            "</urlset>\n"
+        write(f"sitemap_{(i // _chunk) + 1:03d}.xml", sm_child)
+    # 2. sitemap.xml = index pointing at the children
+    index = f'<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \
+        "".join(
+            f'<sitemap><loc>{SITE}/sitemap_{(i // _chunk) + 1:03d}.xml</loc><lastmod>{_today}</lastmod></sitemap>\n'
+            for i in range(0, len(urls), _chunk)
+        ) + "</sitemapindex>\n"
+    write("sitemap.xml", index)
 
     # --- Search-engine verification files (root) -------------------------------
     # GSC_HTML_FILE / GSC_HTML_BODY and BING_HTML_BODY are set above with the

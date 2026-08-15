@@ -99,12 +99,17 @@ for m in re.findall(r'<script type="application/ld\+json">([^<]*)</script>', blo
         fail("invalid JSON-LD: %s" % e)
 print("JSON-LD valid: OK")
 
-# 8) Sitemap URL count sanity (sitemap.xml is the canonical, with <lastmod>)
+# 8) Sitemap index + child sitemaps URL count sanity
 import xml.etree.ElementTree as ET
-_smt = os.path.join(PUB, "sitemap.xml")
-_root = ET.parse(_smt).getroot()
-urls = len([e for e in _root.iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")])
-print("sitemap urls:", urls)
+_ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+_idx = ET.parse(os.path.join(PUB, "sitemap.xml")).getroot()
+_children = [s.find(_ns + "loc").text for s in _idx.findall(_ns + "sitemap")]
+urls = 0
+for c in _children:
+    # child URLs are absolute (SITE/...) — count <loc> inside each child file on disk
+    child_fn = c.split("/")[-1]
+    urls += len(list(ET.parse(os.path.join(PUB, child_fn)).getroot().iter(_ns + "loc")))
+print("sitemap children:", len(_children), "| total urls:", urls)
 if urls < 15000:
     fail("sitemap too small")
 
