@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # needed by peaceiris/actions-gh-pages to push to the target repo
+  contents: read
 
 jobs:
   build-and-deploy:
@@ -20,18 +20,23 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Generate site (BASE="" -> serves at true origin root)
-        run: python3 build.py
+      - name: Generate and verify site
+        run: |
+          python3 build.py
+          python3 verify.py
 
-      - name: Deploy to zackkaz.github.io (user Pages, root)
+      - name: Check cross-repository deploy token
+        env:
+          GH_PAGES_TOKEN: ${{ secrets.GH_PAGES_TOKEN }}
+        run: |
+          if [ -z "$GH_PAGES_TOKEN" ]; then
+            echo "::error::Missing GH_PAGES_TOKEN. Add a fine-grained personal access token with Contents: Read and write access to Zackkaz/zackkaz.github.io under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Deploy to zackkaz.github.io
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          # Personal Access Token with repo scope is required to push to a
-          # DIFFERENT repository (the user Pages repo). The default
-          # GITHUB_TOKEN cannot write to another repo. Provide it as a secret
-          # named GH_PAGES_TOKEN (Settings -> Secrets -> Actions), then switch
-          # the line below. If absent, this step fails with a permission error.
           personal_token: ${{ secrets.GH_PAGES_TOKEN }}
           external_repository: Zackkaz/zackkaz.github.io
           publish_dir: ./public
