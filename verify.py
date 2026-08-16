@@ -69,14 +69,66 @@ for rel, exp in cases:
         fail("%s: got %s expected ~%s" % (rel, num(val), exp))
     print("math ok:", rel, "->", val)
 
-# 5) SEO meta on sampled pages
+# Python conversion-function regressions, including truthy/falsy edge cases.
+import build as generator
+direct_cases = [
+    (("temperature", "celsius", "fahrenheit", 0), 32.0),
+    (("temperature", "celsius", "kelvin", 0), 273.15),
+    (("temperature", "fahrenheit", "celsius", 32), 0.0),
+    (("temperature", "kelvin", "celsius", 273.15), 0.0),
+]
+for args, exp in direct_cases:
+    got = generator.convert(*args)
+    if not approx(got, exp, tol=1e-9):
+        fail("direct conversion %r: got %s expected %s" % (args, got, exp))
+print("temperature zero-point regressions: OK")
+
+# 5) SEO fundamentals on sampled pages
 sample = glob.glob(os.path.join(PUB, "**", "index.html"), recursive=True)[:300]
-bad = sum(1 for p in sample
-          if "<title>" not in open(p, encoding="utf-8").read()
-          or 'name="description"' not in open(p, encoding="utf-8").read())
-print("sampled pages missing title/desc:", bad, "of", len(sample))
-if bad:
-    fail("SEO meta missing")
+titles, descriptions = [], []
+for p in sample:
+    h = open(p, encoding="utf-8").read()
+    tm = re.search(r"<title>([^<]+)</title>", h)
+    dm = re.search(r'<meta name="description" content="([^"]+)">', h)
+    if not tm or not dm or '<link rel="canonical"' not in h or 'name="robots"' not in h:
+        fail("SEO metadata missing: " + p)
+    if len(re.findall(r"<h1(?:\s|>)", h)) != 1:
+        fail("expected exactly one h1: " + p)
+    if "YOUR_" in h or "AD: " in h:
+        fail("unconfigured advertising placeholder rendered: " + p)
+    titles.append(tm.group(1)); descriptions.append(dm.group(1))
+if len(titles) != len(set(titles)):
+    fail("duplicate titles in sampled pages")
+if len(descriptions) != len(set(descriptions)):
+    fail("duplicate descriptions in sampled pages")
+print("SEO metadata, unique titles/descriptions, h1 and clean ad slots: OK")
+
+# Representative pages must provide useful explanatory content, not only a
+# calculator shell and navigation.
+content_minimums = {
+    "length/meter-to-foot/index.html": 220,
+    "length/meter-to-foot/10/index.html": 180,
+    "calculators/percentage/index.html": 120,
+}
+for rel, minimum in content_minimums.items():
+    h = open(os.path.join(PUB, rel), encoding="utf-8").read()
+    visible = re.sub(r"<script[\s\S]*?</script>", " ", h)
+    visible = re.sub(r"<[^>]+>", " ", visible)
+    words = len(re.findall(r"\b[\w%°]+\b", visible))
+    if words < minimum:
+        fail("thin representative page %s: %d words, expected >= %d" % (rel, words, minimum))
+    print("content depth ok:", rel, "->", words, "words")
+
+# No internal converter link may point to a nonexistent same-unit pair.
+for p in sample:
+    h = open(p, encoding="utf-8").read()
+    for href in re.findall(r'href="(/[^"]+)"', h):
+        for segment in href.split("/"):
+            if "-to-" in segment:
+                frm, to = segment.split("-to-", 1)
+                if frm == to:
+                    fail("same-unit internal link %s in %s" % (href, p))
+print("sampled internal converter links: OK")
 
 # 6) Asset references resolve correctly at the origin root (no depth-broken ../assets)
 bad_refs = 0
@@ -110,7 +162,8 @@ for c in _children:
     child_fn = c.split("/")[-1]
     urls += len(list(ET.parse(os.path.join(PUB, child_fn)).getroot().iter(_ns + "loc")))
 print("sitemap children:", len(_children), "| total urls:", urls)
-if urls < 15000:
-    fail("sitemap too small")
+if len(_children) != 9 or urls != 17323:
+    fail("sitemap structure or URL count changed")
 
 print("\nALL CHECKS PASSED")
+

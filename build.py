@@ -204,8 +204,19 @@ def convert(cat, frm, to, v):
         tu = next(u for u in c["units"] if u[0]==to)
         return v * fu[3] / tu[3]
     if c["type"]=="t":
-        cv = frm=="celsius" and v or frm=="fahrenheit" and (v-32)*5/9 or v-273.15
-        return to=="celsius" and cv or to=="fahrenheit" and cv*9/5+32 or cv+273.15
+        # Explicit branches matter here: 0 is falsy in Python, so a chained
+        # and/or expression sends 0°C through the Kelvin branch.
+        if frm == "celsius":
+            cv = v
+        elif frm == "fahrenheit":
+            cv = (v - 32) * 5 / 9
+        else:
+            cv = v - 273.15
+        if to == "celsius":
+            return cv
+        if to == "fahrenheit":
+            return cv * 9 / 5 + 32
+        return cv + 273.15
     return float("nan")
 
 def fmt(x):
@@ -226,6 +237,33 @@ SYM = {c["slug"]:{u[0]:u[1] for u in c["units"]} for c in CATS}
 UNM = {c["slug"]:{u[0]:u[2] for u in c["units"]} for c in CATS}
 def CATS_name(slug): return next(c["name"] for c in CATS if c["slug"]==slug)
 
+def conversion_formula(cat, frm, to):
+    """Return a readable formula and a plain-English instruction."""
+    c = next(x for x in CATS if x["slug"] == cat)
+    fs, ts = SYM[cat][frm], SYM[cat][to]
+    if c["type"] == "f":
+        rate = convert(cat, frm, to, 1)
+        return (f"{ts} = {fs} × {fmt(rate)}",
+                f"Multiply the {UNM[cat][frm].lower()} value by {fmt(rate)} to get {UNM[cat][to].lower()}.")
+    formulas = {
+        ("celsius", "fahrenheit"): ("°F = (°C × 9/5) + 32", "Multiply Celsius by 9/5, then add 32."),
+        ("fahrenheit", "celsius"): ("°C = (°F − 32) × 5/9", "Subtract 32 from Fahrenheit, then multiply by 5/9."),
+        ("celsius", "kelvin"): ("K = °C + 273.15", "Add 273.15 to Celsius."),
+        ("kelvin", "celsius"): ("°C = K − 273.15", "Subtract 273.15 from Kelvin."),
+        ("fahrenheit", "kelvin"): ("K = (°F − 32) × 5/9 + 273.15", "Subtract 32, multiply by 5/9, then add 273.15."),
+        ("kelvin", "fahrenheit"): ("°F = (K − 273.15) × 9/5 + 32", "Subtract 273.15, multiply by 9/5, then add 32."),
+    }
+    return formulas[(frm, to)]
+
+def worked_calculation(cat, frm, to, value):
+    result = convert(cat, frm, to, value)
+    c = next(x for x in CATS if x["slug"] == cat)
+    if c["type"] == "f":
+        rate = convert(cat, frm, to, 1)
+        return f"{fmt(value)} {SYM[cat][frm]} × {fmt(rate)} = {fmt(result)} {SYM[cat][to]}"
+    formula, _ = conversion_formula(cat, frm, to)
+    return f"Using {formula}: {fmt(value)} {SYM[cat][frm]} = {fmt(result)} {SYM[cat][to]}"
+
 # ---------------------------------------------------------------------------
 # HTML helpers (all internal links/assets are ROOT-ABSOLUTE so any depth works)
 # ---------------------------------------------------------------------------
@@ -242,11 +280,14 @@ def breadcrumb_schema(trail):
 
 def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld="", vmeta=""):
     cfg = f'<script>window.__PAGE__={json.dumps(pagecfg or {})};</script>' if pagecfg is not None else ""
-    convjs = f'<script src="{BASE}/assets/cats.js"></script><script src="{BASE}/assets/conv.js"></script>' if pagecfg and "cat" in (pagecfg or {}) else ""
+    convjs = f'<script src="{BASE}/assets/cats.js" defer></script><script src="{BASE}/assets/conv.js" defer></script>' if pagecfg and "cat" in (pagecfg or {}) else ""
+    site_schema = jsonld({"@context":"https://schema.org","@type":"WebSite","@id":SITE+"/#website",
+        "name":"FreeConvert","alternateName":"Free Convert","url":SITE+"/"}) if canonical == SITE+"/" else ""
     og = (f'<meta property="og:title" content="{title}">'
           f'<meta property="og:description" content="{desc}">'
           f'<meta property="og:type" content="website">'
-          f'<meta property="og:url" content="{canonical}">')
+          f'<meta property="og:url" content="{canonical}">'
+          f'<meta property="og:site_name" content="FreeConvert">')
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -255,6 +296,7 @@ def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
 <meta name="description" content="{desc}">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="{canonical}">
 {og}
 <meta name="twitter:card" content="summary">
@@ -263,7 +305,7 @@ def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld
 {vmeta}
 <link rel="stylesheet" href="{BASE}/assets/style.css">
 {cfg}{convjs}{extra_head}
-{jsonld({"@context":"https://schema.org","@type":"WebSite","name":"FreeConvert","url":SITE})}
+{site_schema}
 {extra_jsonld}
 <script>
 // Monetag service-worker push registration (file lives at BASE+/sw.js)
@@ -275,6 +317,7 @@ if ("serviceWorker" in navigator) {{
 </script>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 <header class="top"><div class="wrap">
   <a class="brand" href="{BASE}/">Free<span>Convert</span></a>
   <nav class="top">
@@ -283,7 +326,7 @@ if ("serviceWorker" in navigator) {{
     <a href="{BASE}/#calc">Calculators</a>
   </nav>
 </div></header>
-<main class="wrap">
+<main class="wrap" id="main-content">
 {body}
 </main>
 <footer><div class="wrap">
@@ -295,10 +338,11 @@ if ("serviceWorker" in navigator) {{
 
 def ad_slot(kind):
     code = ADS.get(kind,"")
-    if code.strip():
+    if code.strip() and "YOUR_" not in code:
         return f'<div class="ad">{code}</div>'
-    # visible placeholder until a real snippet is pasted (renders harmlessly)
-    return f'<div class="ad">AD: {kind} — paste snippet in build.py ADS["{kind}"]</div>'
+    # Missing ad credentials should never create broken scripts or visible
+    # placeholders. Real snippets render automatically once configured.
+    return ""
 
 # ---------------------------------------------------------------------------
 # Page builders
@@ -306,41 +350,58 @@ def ad_slot(kind):
 def converter_card(cat, frm, to, preset=None):
     return f'''<div class="card conv">
   <div class="row">
-    <select id="from"></select>
-    <input id="val" type="number" inputmode="decimal" value="{preset if preset is not None else 1}">
+    <label class="sr-only" for="from">From unit</label>
+    <select id="from" aria-label="From unit"></select>
+    <label class="sr-only" for="val">Value to convert</label>
+    <input id="val" type="number" inputmode="decimal" aria-label="Value to convert" value="{preset if preset is not None else 1}">
     <span class="eq">=</span>
-    <select id="to"></select>
+    <label class="sr-only" for="to">To unit</label>
+    <select id="to" aria-label="To unit"></select>
   </div>
-  <div class="result" id="res">—</div>
+  <div class="result" id="res" aria-live="polite">—</div>
 </div>'''
 
 def breadcrumb_html(trail):
-    return '<div class="breadcrumb">'+ " › ".join(
-        f'<a href="{u}">{n}</a>' if i>0 else f'<a href="{u}">{n}</a>' for i,(n,u) in enumerate(trail))+'</div>'
+    return '<nav class="breadcrumb" aria-label="Breadcrumb">'+ " › ".join(
+        f'<a href="{u}">{n}</a>' for n,u in trail)+'</nav>'
 
 def pair_page(cat, frm, to):
     c = next(x for x in CATS if x["slug"]==cat)
-    title = f"{UNM[cat][frm]} to {UNM[cat][to]} — Convert {c['name']}"
-    desc  = f"Free {UNM[cat][frm]} to {UNM[cat][to]} converter. Exact {c['name'].lower()} conversion with a live calculator and common values."
+    rate = convert(cat, frm, to, 1)
+    formula, instruction = conversion_formula(cat, frm, to)
+    title = f"{UNM[cat][frm]} to {UNM[cat][to]} Converter ({SYM[cat][frm]} to {SYM[cat][to]}) | FreeConvert"
+    desc  = f"Convert {UNM[cat][frm].lower()} to {UNM[cat][to].lower()}. 1 {SYM[cat][frm]} = {fmt(rate)} {SYM[cat][to]}. Includes the exact formula, calculator, table and worked example."
     rows="".join(f'<tr><td><a href="{BASE}/{cat}/{frm}-to-{to}/{v}/">{fmt(v)} {SYM[cat][frm]}</a></td><td>{fmt(convert(cat,frm,to,v))} {SYM[cat][to]}</td></tr>' for v in [1,5,10,50,100])
     table=f'<table><thead><tr><th>Value</th><th>{UNM[cat][to]} ({SYM[cat][to]})</th></tr></thead><tbody>{rows}</tbody></table>'
-    faq="".join(f'<details><summary>{q}</summary><p>{a}</p></details>' for q,a in c["faqs"])
+    faq_items = [
+        (f"How do I convert {UNM[cat][frm].lower()} to {UNM[cat][to].lower()}?", f"{instruction} The formula is {formula}."),
+        (f"How many {UNM[cat][to].lower()} are in 1 {SYM[cat][frm]}?", f"1 {SYM[cat][frm]} equals {fmt(rate)} {SYM[cat][to]}."),
+    ]
+    faq="".join(f'<details><summary>{q}</summary><p>{a}</p></details>' for q,a in faq_items)
     faq_json = jsonld({"@context":"https://schema.org","@type":"FAQPage",
-        "mainEntity":[{"@type":"Question","name":q,"acceptedAnswer":{"@type":"Answer","text":a}} for q,a in c["faqs"]]})
+        "mainEntity":[{"@type":"Question","name":q,"acceptedAnswer":{"@type":"Answer","text":a}} for q,a in faq_items]})
     trail=[("Home",SITE+"/"),(c["name"],SITE+f"/{cat}/"),(f"{UNM[cat][frm]} to {UNM[cat][to]}",SITE+f"/{cat}/{frm}-to-{to}/")]
     body = f'''{breadcrumb_html(trail)}
 <h1>{UNM[cat][frm]} to {UNM[cat][to]}</h1>
 <p class="lede">{desc}</p>
 {converter_card(cat,frm,to)}
 {ad_slot("adsterra_native")}
+<h2>{UNM[cat][frm]} to {UNM[cat][to]} formula</h2>
+<div class="formula"><strong>{formula}</strong><span>{instruction}</span></div>
+<h2>Worked example</h2>
+<p>To convert 10 {SYM[cat][frm]} to {SYM[cat][to]}:</p>
+<p class="calculation">{worked_calculation(cat,frm,to,10)}</p>
 <h2>Common {UNM[cat][frm]} to {UNM[cat][to]} conversions</h2>
 {table}
+<h2>Accuracy and rounding</h2>
+<p>The calculator keeps more precision internally than it displays. For everyday use, round the result to the number of decimal places your measurement supports. Keep extra digits for scientific or engineering calculations.</p>
+<p><a href="{BASE}/{cat}/{to}-to-{frm}/">Convert {UNM[cat][to]} back to {UNM[cat][frm]} →</a></p>
 <h2>Frequently asked questions</h2>
 <div class="faq">{faq}</div>
 {ad_slot("monetag_smartlink")}
 <h2>More {c['name']} converters</h2>
 <div class="grid">''' + "".join(
-        f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm
+        f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0] not in (frm,to)
     ) + "</div>"
     return page(title,desc,body, SITE+f"/{cat}/{frm}-to-{to}/",
                 pagecfg={"cat":cat,"from":frm,"to":to}, extra_jsonld=breadcrumb_schema(trail)+faq_json)
@@ -348,35 +409,96 @@ def pair_page(cat, frm, to):
 def longtail_page(cat,frm,to,val):
     c = next(x for x in CATS if x["slug"]==cat)
     r = convert(cat,frm,to,val)
-    title = f"{fmt(val)} {SYM[cat][frm]} to {SYM[cat][to]} | {UNM[cat][frm]} in {UNM[cat][to]}"
-    desc  = f"{fmt(val)} {SYM[cat][frm]} = {fmt(r)} {SYM[cat][to]}. Free {c['name'].lower()} converter with exact result and related values."
+    formula, instruction = conversion_formula(cat, frm, to)
+    title = f"{fmt(val)} {UNM[cat][frm]} to {UNM[cat][to]} ({fmt(r)} {SYM[cat][to]})"
+    desc  = f"Convert {fmt(val)} {SYM[cat][frm]} to {SYM[cat][to]}: {fmt(val)} {SYM[cat][frm]} = {fmt(r)} {SYM[cat][to]}. See the formula, calculation steps and nearby values."
     others="".join(f'<a class="chip" href="{BASE}/{cat}/{frm}-to-{to}/{v}/">{fmt(v)} {SYM[cat][frm]}</a>' for v in PRESETS if v!=val)
+    nearby = [-1, 0, 1] if val == 0 else [val * 0.5, val, val * 1.5]
+    nearby_rows = "".join(f'<tr><td>{fmt(v)} {SYM[cat][frm]}</td><td>{fmt(convert(cat,frm,to,v))} {SYM[cat][to]}</td></tr>' for v in nearby)
     trail=[("Home",SITE+"/"),(c["name"],SITE+f"/{cat}/"),(f"{UNM[cat][frm]} to {UNM[cat][to]}",SITE+f"/{cat}/{frm}-to-{to}/"),(f"{fmt(val)} {SYM[cat][frm]}",SITE+f"/{cat}/{frm}-to-{to}/{val}/")]
     body = f'''{breadcrumb_html(trail)}
-<h1>{fmt(val)} {SYM[cat][frm]} to {SYM[cat][to]}</h1>
-<p class="lede">{fmt(val)} {SYM[cat][frm]} equals:</p>
+<h1>{fmt(val)} {UNM[cat][frm]} to {UNM[cat][to]}</h1>
+<p class="lede">{fmt(val)} {SYM[cat][frm]} equals {fmt(r)} {SYM[cat][to]}.</p>
 <div class="big">{fmt(r)} {SYM[cat][to]}</div>
 {converter_card(cat,frm,to,val)}
 {ad_slot("adsterra_native")}
+<h2>Conversion formula</h2>
+<div class="formula"><strong>{formula}</strong><span>{instruction}</span></div>
+<h2>Calculation</h2>
+<p class="calculation">{worked_calculation(cat,frm,to,val)}</p>
+<h2>Nearby values</h2>
+<table><thead><tr><th>{UNM[cat][frm]} ({SYM[cat][frm]})</th><th>{UNM[cat][to]} ({SYM[cat][to]})</th></tr></thead><tbody>{nearby_rows}</tbody></table>
+<h2>Result precision</h2>
+<p>The displayed result is rounded to six decimal places when needed. The converter calculates with full floating-point precision, so you can enter a more precise value in the calculator above.</p>
+<p><a href="{BASE}/{cat}/{to}-to-{frm}/">Reverse this conversion: {UNM[cat][to]} to {UNM[cat][frm]} →</a></p>
 <h2>Other {UNM[cat][frm]} values in {UNM[cat][to]}</h2>
 <div class="grid">{others}</div>
 <h2>Related {c['name']} converters</h2>
 <div class="grid">''' + "".join(
-        f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm
+        f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0] not in (frm,to)
     ) + "</div>"
     return page(title,desc,body, SITE+f"/{cat}/{frm}-to-{to}/{val}/",
                 pagecfg={"cat":cat,"from":frm,"to":to,"preset":val}, extra_jsonld=breadcrumb_schema(trail))
 
+CALC_GUIDES = {
+    "percentage": {
+        "formula":"Result = (percentage ÷ 100) × number",
+        "example":"10% of 200 = (10 ÷ 100) × 200 = 20.",
+        "notes":"Percent means “per hundred.” Convert the percentage to a decimal by dividing by 100, then multiply by the original number."
+    },
+    "tip": {
+        "formula":"Tip = bill × (tip percentage ÷ 100); per person = (bill + tip) ÷ people",
+        "example":"A 15% tip on a 50 bill is 7.50. Split between two people, the total is 28.75 each.",
+        "notes":"Enter the pre-tip bill amount, desired tip percentage and number of people. The calculator shows the tip, total and equal share per person."
+    },
+    "loan": {
+        "formula":"EMI = P × r × (1 + r)ⁿ ÷ ((1 + r)ⁿ − 1)",
+        "example":"For a 10,000 loan at 8% annually over 5 years, r is the monthly rate and n is 60 monthly payments.",
+        "notes":"P is principal, r is the monthly interest rate and n is the number of monthly payments. Results are estimates and may differ from a lender’s fees or rounding."
+    },
+    "date-difference": {
+        "formula":"Difference in days = end date − start date",
+        "example":"From 1 January to 11 January is 10 elapsed days.",
+        "notes":"The result uses elapsed calendar days. The year estimate uses 365.25 days to account for leap years over long periods."
+    },
+    "words-to-pages": {
+        "formula":"Estimated pages = word count ÷ words per page",
+        "example":"2,500 words at 500 words per page is approximately 5 pages.",
+        "notes":"Actual page count depends on font, spacing, margins, headings and images. Change the words-per-page value to match your document format."
+    },
+    "age": {
+        "formula":"Approximate age = elapsed days ÷ 365.25",
+        "example":"The calculator measures elapsed time from the birth date to today and reports years and total days.",
+        "notes":"The decimal-year figure is an estimate based on 365.25 days per year; the total elapsed days is also shown."
+    },
+}
+
 def calc_page(slug, title, desc, fields, button, fn, out_id):
-    flds="".join(f'<label>{lab}</label>{inp}' for lab,inp in fields)
-    body=f'''<h1>{title}</h1>
+    def labeled_field(label, input_html):
+        marker = "id='"
+        field_id = input_html.split(marker, 1)[1].split("'", 1)[0]
+        return f'<label for="{field_id}">{label}</label>{input_html}'
+    flds="".join(labeled_field(lab, inp) for lab,inp in fields)
+    guide = CALC_GUIDES[slug]
+    trail=[("Home",SITE+"/"),("Calculators",SITE+"/#calc"),(title,SITE+f"/calculators/{slug}/")]
+    body=f'''{breadcrumb_html(trail)}
+<h1>{title}</h1>
 <p class="lede">{desc}</p>
 <div class="card calc">{flds}
 <button class="btn" onclick="runCalc({fn},\'{out_id}\')">{button}</button>
-<div class="out" id="{out_id}"></div>
+<div class="out" id="{out_id}" aria-live="polite"></div>
 </div>{ad_slot("adsterra_native")}
-<h2>How it works</h2><p>{desc} This free calculator runs entirely in your browser — no data leaves your device.</p>'''
-    return page(title,desc,body, SITE+f"/calculators/{slug}/", extra_head=f'<script src="{BASE}/assets/calc.js"></script>')
+<h2>Formula</h2>
+<div class="formula"><strong>{guide["formula"]}</strong><span>{guide["notes"]}</span></div>
+<h2>Worked example</h2><p>{guide["example"]}</p>
+<h2>How this calculator works</h2>
+<p>{desc} The calculation runs entirely in your browser, so the values you enter are not sent to a server.</p>
+<h2>Using the result</h2>
+<p>Check that your inputs use the intended units and assumptions. Round only the final result so intermediate rounding does not introduce avoidable error.</p>'''
+    page_desc = f"{desc} Includes the formula, a worked example and an instant browser-based result."
+    return page(f"{title} | FreeConvert",page_desc,body, SITE+f"/calculators/{slug}/",
+                extra_head=f'<script src="{BASE}/assets/calc.js" defer></script>',
+                extra_jsonld=breadcrumb_schema(trail))
 
 CALCS = [
   ("percentage","Percentage Calculator","Find what a percentage of a number is, instantly.",
@@ -460,28 +582,54 @@ def main():
         f'<a class="catcard" href="{BASE}/{c["slug"]}/"><b>{c["name"]}</b><span>{len(c["units"])} units · {len(c["units"])*(len(c["units"])-1)} conversions</span></a>'
         for c in CATS)
     calchome="".join(f'<a class="chip" href="{BASE}/calculators/{s}/">{t}</a>' for s,t,_,_,_,_,_ in CALCS)
+    popular = [
+        ("Meters to Feet", "/length/meter-to-foot/"),
+        ("Kilometers to Miles", "/length/kilometer-to-mile/"),
+        ("Kilograms to Pounds", "/weight/kilogram-to-pound/"),
+        ("Celsius to Fahrenheit", "/temperature/celsius-to-fahrenheit/"),
+        ("Liters to US Gallons", "/volume/liter-to-gallon-us/"),
+        ("Megabytes to Gigabytes", "/digital/megabyte-to-gigabyte/"),
+    ]
+    popular_links = "".join(f'<a class="chip" href="{BASE}{url}">{label}</a>' for label,url in popular)
     home=f'''<h1>Free Unit Converters & Calculators</h1>
 <p class="lede">Fast, accurate, free converters for length, weight, temperature, volume, digital storage and more — plus everyday calculators. No sign-up.</p>
 {ad_slot("propeller_onclick")}
 <h2 id="categories">Converters</h2>
 <div class="catcards">{catcards}</div>
+<h2>Popular conversions</h2>
+<div class="grid">{popular_links}</div>
 <h2 id="calc">Calculators</h2>
 <div class="grid">{calchome}</div>
 {ad_slot("adsterra_native")}
-<h2>Why FreeConvert</h2>
-<p>Every page is generated with exact math and loads instantly on any device. Perfect for students, cooks, engineers and travelers.</p>'''
+<h2>How to use FreeConvert</h2>
+<ol class="steps"><li>Choose a converter or calculator.</li><li>Enter a value and select the units.</li><li>Read the instant result, formula and worked example.</li></ol>
+<h2>Accurate conversions, clearly explained</h2>
+<p>FreeConvert calculates metric, imperial and specialist unit conversions from defined conversion factors and established temperature formulas. Converter pages show the formula, a worked calculation, a common-values table and guidance about rounding so you can understand and verify the result.</p>
+<p>Calculations run in your browser and require no account. The site is designed for quick checks by students, cooks, engineers, travelers and anyone comparing measurement systems.</p>'''
     write("index.html", page("FreeConvert — Free Unit Converters & Calculators",
         "Free, fast unit converters (length, weight, temperature, volume, digital storage) and everyday calculators. Exact results, no sign-up.", home, SITE+"/"))
     urls.append(SITE+"/")
 
     for c in CATS:
         cat=c["slug"]; units=c["units"]
-        chips="".join(f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{units[1][0]}/">{u[2]} → {units[1][2]}</a>' for u in units)
-        idx=f'''<h1>{c["name"]} Converters</h1>
+        links=[]
+        for u in units:
+            target = units[0] if u[0] != units[0][0] else units[1]
+            links.append(f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{target[0]}/">{u[2]} → {target[2]}</a>')
+        chips="".join(links)
+        trail=[("Home",SITE+"/"),(f"{c['name']} converters",SITE+f"/{cat}/")]
+        idx=f'''{breadcrumb_html(trail)}
+<h1>{c["name"]} Converters</h1>
 <p class="lede">{c["intro"]}</p>
+<h2>Choose a {c["name"].lower()} conversion</h2>
 <div class="grid">{chips}</div>
-{ad_slot("adsterra_native")}'''
-        write(f"{cat}/index.html", page(f"{c['name']} Converters — FreeConvert", c["intro"], idx, SITE+f"/{cat}/"))
+{ad_slot("adsterra_native")}
+<h2>How {c["name"].lower()} conversion works</h2>
+<p>{c["intro"]} Select a starting unit above to open a calculator with the exact conversion formula, worked example and common-value table.</p>
+<p>This category contains {len(units)} supported units and {len(units)*(len(units)-1)} direct unit-to-unit converters. Reverse-conversion links make it easy to check the calculation in both directions.</p>'''
+        category_desc = f"Free {c['name'].lower()} converters for {len(units)} units, with exact formulas, worked examples and conversion tables."
+        write(f"{cat}/index.html", page(f"{c['name']} Conversion Calculators | FreeConvert", category_desc, idx,
+              SITE+f"/{cat}/", extra_jsonld=breadcrumb_schema(trail)))
         urls.append(f"{SITE}/{cat}/")
         for a in units:
             for b in units:
@@ -565,3 +713,4 @@ Thanks to the open-source static-web community.
 
 if __name__=="__main__":
     main()
+
