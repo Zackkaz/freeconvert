@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/monetag_tag.min.js" data-zone="270206" async data-cfasync="false"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How temperature conversions work</title>
+<meta name="description" content="Why Celsius, Fahrenheit and Kelvin use different formulas, and how to convert between them by hand.">
+<link rel="canonical" href="https://zackkaz.github.io/guides/temperature-conversions/">
+<meta property="og:title" content="How temperature conversions work"><meta property="og:description" content="Why Celsius, Fahrenheit and Kelvin use different formulas, and how to convert between them by hand."><meta property="og:type" content="website"><meta property="og:url" content="https://zackkaz.github.io/guides/temperature-conversions/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="How temperature conversions work">
+<meta name="twitter:description" content="Why Celsius, Fahrenheit and Kelvin use different formulas, and how to convert between them by hand.">
+
+<link rel="stylesheet" href="/assets/style.css">
+
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "FreeConvert", "url": "https://zackkaz.github.io"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "How temperature conversions work", "description": "Why Celsius, Fahrenheit and Kelvin use different formulas, and how to convert between them by hand.", "url": "https://zackkaz.github.io/guides/temperature-conversions/", "isPartOf": {"@type": "WebSite", "name": "FreeConvert", "url": "https://zackkaz.github.io"}}</script>
+<script>
+// Monetag service-worker push registration (file lives at BASE+/sw.js)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("/sw.js").catch(function(e){});
+  });
+}
+</script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/">Free<span>Convert</span></a>
+  <nav class="top">
+    <a href="/">Home</a>
+    <a href="/#categories">Converters</a>
+    <a href="/#calc">Calculators</a>
+    <a href="/guides/">Guides</a>
+  </nav>
+</div></header>
+<main class="wrap">
+<h1>How temperature conversions work</h1>
+<p class="lede">Unlike length or mass, temperature scales do not share a zero point, so conversion is a two-step shift, not a simple ratio.</p>
+<h2>The three common scales</h2>
+<ul>
+  <li><strong>Celsius (°C):</strong> 0 °C is the freezing point of water, 100 °C its boiling point (at 1 atm).</li>
+  <li><strong>Fahrenheit (°F):</strong> 32 °F is water's freezing point, 212 °F its boiling point.</li>
+  <li><strong>Kelvin (K):</strong> an absolute scale where 0 K is absolute zero; 273.15 K = 0 °C.</li>
+</ul>
+<h2>The formulas</h2>
+<div class="formula">°F = °C × 9/5 + 32</div>
+<div class="formula">°C = (°F - 32) × 5/9</div>
+<div class="formula">K = °C + 273.15</div>
+<h2>Worked examples</h2>
+<table>
+<thead><tr><th>°C</th><th>°F</th><th>K</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>32</td><td>273.15</td></tr>
+<tr><td>25</td><td>77</td><td>298.15</td></tr>
+<tr><td>100</td><td>212</td><td>373.15</td></tr>
+<tr><td>-40</td><td>-40</td><td>233.15</td></tr>
+</tbody></table>
+<p>Note that -40 °C = -40 °F - the only point where the two scales agree.</p>
+<h2>Why the 9/5 and 32?</h2>
+<p>Between freezing and boiling, Celsius spans 100 degrees while Fahrenheit spans 180 (212-32). So each Celsius degree is 180/100 = 9/5 of a Fahrenheit degree. The +32 aligns the zero points. Kelvin simply shifts Celsius by the defined value 273.15 (the ice point of water). See <a href="https://www.nist.gov/pml/weights-and-measures/si-units-temperature" rel="noopener">NIST</a>.</p>
+<p>Try it: <a href="/temperature/celsius-to-fahrenheit/">Celsius to Fahrenheit</a>, <a href="/temperature/celsius-to-kelvin/">Celsius to Kelvin</a>.</p>
+</main>
+<footer><div class="wrap">
+  <div class="fcols">
+    <div>
+      <div class="fbrand">Free<span>Convert</span></div>
+      <p class="fmuted">Free, accurate unit converters and calculators. No sign-up, runs in your browser.</p>
+    </div>
+    <nav class="fnav" aria-label="Footer">
+      <div><h4>Converters</h4>
+        <a href="/length/">Length</a><a href="/weight/">Weight</a>
+        <a href="/temperature/">Temperature</a><a href="/volume/">Volume</a>
+        <a href="/digital/">Digital storage</a><a href="/speed/">Speed</a>
+      </div>
+      <div><h4>Learn</h4>
+        <a href="/guides/">Guides</a>
+        <a href="/guides/metric-vs-imperial/">Metric vs imperial</a>
+        <a href="/guides/temperature-conversions/">Temperature maths</a>
+        <a href="/guides/mass-vs-weight/">Mass vs weight</a>
+      </div>
+      <div><h4>Site</h4>
+        <a href="/about/">About</a>
+        <a href="/methodology/">Methodology</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        <a href="/contact/">Contact</a>
+        <a href="/sitemap.xml">Sitemap</a>
+      </div>
+    </nav>
+  </div>
+  <div class="flegal">© 2026 FreeConvert. Conversions are calculated automatically; verify critical values independently.</div>
+</div></footer>
+</body>
+</html>

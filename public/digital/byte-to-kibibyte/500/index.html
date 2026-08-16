@@ -32,6 +32,7 @@ if ("serviceWorker" in navigator) {
     <a href="/">Home</a>
     <a href="/#categories">Converters</a>
     <a href="/#calc">Calculators</a>
+    <a href="/guides/">Guides</a>
   </nav>
 </div></header>
 <main class="wrap">
@@ -39,24 +40,64 @@ if ("serviceWorker" in navigator) {
 <h1>500 B to KiB</h1>
 <p class="lede">500 B equals:</p>
 <div class="big">0.488281 KiB</div>
-<div class="card conv">
+<div class="card conv" data-cat="digital">
   <div class="row">
-    <select id="from"></select>
-    <input id="val" type="number" inputmode="decimal" value="500">
-    <span class="eq">=</span>
-    <select id="to"></select>
+    <label class="lbl" for="from">From</label>
+    <select id="from" aria-label="From unit"></select>
+    <input id="val" type="number" inputmode="decimal" value="500" aria-label="Value to convert">
+    <span class="eq" aria-hidden="true">=</span>
+    <label class="lbl" for="to">To</label>
+    <select id="to" aria-label="To unit"></select>
   </div>
-  <div class="result" id="res">—</div>
+  <div class="controls">
+    <button type="button" id="swap" class="btn small" aria-label="Swap units">⇄ Swap</button>
+    <button type="button" id="reset" class="btn small" aria-label="Reset to defaults">↺ Reset</button>
+    <button type="button" id="copy" class="btn small" aria-label="Copy result">⧉ Copy</button>
+    <label class="preclbl" for="prec">Precision</label>
+    <select id="prec" aria-label="Decimal precision">
+      <option value="auto" selected>Auto</option>
+      <option value="2">2</option><option value="4">4</option>
+      <option value="6">6</option><option value="10">10</option>
+    </select>
+  </div>
+  <div class="result" id="res" aria-live="polite" aria-atomic="true">—</div>
+  <div class="copystat" id="copystat" role="status" aria-live="polite"></div>
 </div>
-<div class="ad"><script type="text/javascript">atOptions = {key:"YOUR_ADSTERRA_KEY_HERE", format:"iframe", height:250, width:300, params:{}};(function(){var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0];g.src="https://cdn.adsterra.com/asyncjs.php"; s.parentNode.insertBefore(g,s);})();</script></div>
+
 <h2>Other Bytes values in Kibibytes (1024 B)</h2>
 <div class="grid"><a class="chip" href="/digital/byte-to-kibibyte/0.25/">0.25 B</a><a class="chip" href="/digital/byte-to-kibibyte/0.5/">0.5 B</a><a class="chip" href="/digital/byte-to-kibibyte/0.75/">0.75 B</a><a class="chip" href="/digital/byte-to-kibibyte/1/">1 B</a><a class="chip" href="/digital/byte-to-kibibyte/2/">2 B</a><a class="chip" href="/digital/byte-to-kibibyte/3/">3 B</a><a class="chip" href="/digital/byte-to-kibibyte/5/">5 B</a><a class="chip" href="/digital/byte-to-kibibyte/10/">10 B</a><a class="chip" href="/digital/byte-to-kibibyte/12/">12 B</a><a class="chip" href="/digital/byte-to-kibibyte/15/">15 B</a><a class="chip" href="/digital/byte-to-kibibyte/20/">20 B</a><a class="chip" href="/digital/byte-to-kibibyte/25/">25 B</a><a class="chip" href="/digital/byte-to-kibibyte/30/">30 B</a><a class="chip" href="/digital/byte-to-kibibyte/50/">50 B</a><a class="chip" href="/digital/byte-to-kibibyte/100/">100 B</a><a class="chip" href="/digital/byte-to-kibibyte/250/">250 B</a><a class="chip" href="/digital/byte-to-kibibyte/1000/">1,000 B</a><a class="chip" href="/digital/byte-to-kibibyte/2000/">2,000 B</a><a class="chip" href="/digital/byte-to-kibibyte/5000/">5,000 B</a></div>
 <h2>Related Digital Storage converters</h2>
-<div class="grid"><a class="chip" href="/digital/bit-to-kibibyte/">Bits → Kibibytes (1024 B)</a><a class="chip" href="/digital/kilobyte-to-kibibyte/">Kilobytes (1000 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/megabyte-to-kibibyte/">Megabytes (1e6 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/gigabyte-to-kibibyte/">Gigabytes (1e9 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/terabyte-to-kibibyte/">Terabytes (1e12 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/petabyte-to-kibibyte/">Petabytes (1e15 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/kibibyte-to-kibibyte/">Kibibytes (1024 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/mebibyte-to-kibibyte/">Mebibytes (1048576 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/gibibyte-to-kibibyte/">Gibibytes (1073741824 B) → Kibibytes (1024 B)</a></div>
+<div class="grid"><a class="chip" href="/digital/bit-to-kibibyte/">Bits → Kibibytes (1024 B)</a><a class="chip" href="/digital/kilobyte-to-kibibyte/">Kilobytes (1000 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/megabyte-to-kibibyte/">Megabytes (1e6 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/gigabyte-to-kibibyte/">Gigabytes (1e9 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/terabyte-to-kibibyte/">Terabytes (1e12 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/petabyte-to-kibibyte/">Petabytes (1e15 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/mebibyte-to-kibibyte/">Mebibytes (1048576 B) → Kibibytes (1024 B)</a><a class="chip" href="/digital/gibibyte-to-kibibyte/">Gibibytes (1073741824 B) → Kibibytes (1024 B)</a></div>
 </main>
 <footer><div class="wrap">
-  <div>© 2026 FreeConvert — free unit converters & calculators.</div>
-  <div><a href="/sitemap.xml">Sitemap</a> · <a href="/robots.txt">Robots</a></div>
+  <div class="fcols">
+    <div>
+      <div class="fbrand">Free<span>Convert</span></div>
+      <p class="fmuted">Free, accurate unit converters and calculators. No sign-up, runs in your browser.</p>
+    </div>
+    <nav class="fnav" aria-label="Footer">
+      <div><h4>Converters</h4>
+        <a href="/length/">Length</a><a href="/weight/">Weight</a>
+        <a href="/temperature/">Temperature</a><a href="/volume/">Volume</a>
+        <a href="/digital/">Digital storage</a><a href="/speed/">Speed</a>
+      </div>
+      <div><h4>Learn</h4>
+        <a href="/guides/">Guides</a>
+        <a href="/guides/metric-vs-imperial/">Metric vs imperial</a>
+        <a href="/guides/temperature-conversions/">Temperature maths</a>
+        <a href="/guides/mass-vs-weight/">Mass vs weight</a>
+      </div>
+      <div><h4>Site</h4>
+        <a href="/about/">About</a>
+        <a href="/methodology/">Methodology</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        <a href="/contact/">Contact</a>
+        <a href="/sitemap.xml">Sitemap</a>
+      </div>
+    </nav>
+  </div>
+  <div class="flegal">© 2026 FreeConvert. Conversions are calculated automatically; verify critical values independently.</div>
 </div></footer>
 </body>
 </html>

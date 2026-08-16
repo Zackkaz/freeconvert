@@ -3,5 +3,5 @@ Team
     Site: FreeConvert — free unit converters & calculators
     Built with: Python static generator + GitHub Pages ($0 hosting)
     Contact: open an issue on github.com/Zackkaz/freeconvert
-Last build: 2026-08-15
+Last build: 2026-08-16
 Thanks to the open-source static-web community.

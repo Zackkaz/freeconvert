@@ -32,6 +32,7 @@ if ("serviceWorker" in navigator) {
     <a href="/">Home</a>
     <a href="/#categories">Converters</a>
     <a href="/#calc">Calculators</a>
+    <a href="/guides/">Guides</a>
   </nav>
 </div></header>
 <main class="wrap">
@@ -39,24 +40,64 @@ if ("serviceWorker" in navigator) {
 <h1>2 lb to kg</h1>
 <p class="lede">2 lb equals:</p>
 <div class="big">0.907185 kg</div>
-<div class="card conv">
+<div class="card conv" data-cat="weight">
   <div class="row">
-    <select id="from"></select>
-    <input id="val" type="number" inputmode="decimal" value="2">
-    <span class="eq">=</span>
-    <select id="to"></select>
+    <label class="lbl" for="from">From</label>
+    <select id="from" aria-label="From unit"></select>
+    <input id="val" type="number" inputmode="decimal" value="2" aria-label="Value to convert">
+    <span class="eq" aria-hidden="true">=</span>
+    <label class="lbl" for="to">To</label>
+    <select id="to" aria-label="To unit"></select>
   </div>
-  <div class="result" id="res">—</div>
+  <div class="controls">
+    <button type="button" id="swap" class="btn small" aria-label="Swap units">⇄ Swap</button>
+    <button type="button" id="reset" class="btn small" aria-label="Reset to defaults">↺ Reset</button>
+    <button type="button" id="copy" class="btn small" aria-label="Copy result">⧉ Copy</button>
+    <label class="preclbl" for="prec">Precision</label>
+    <select id="prec" aria-label="Decimal precision">
+      <option value="auto" selected>Auto</option>
+      <option value="2">2</option><option value="4">4</option>
+      <option value="6">6</option><option value="10">10</option>
+    </select>
+  </div>
+  <div class="result" id="res" aria-live="polite" aria-atomic="true">—</div>
+  <div class="copystat" id="copystat" role="status" aria-live="polite"></div>
 </div>
-<div class="ad"><script type="text/javascript">atOptions = {key:"YOUR_ADSTERRA_KEY_HERE", format:"iframe", height:250, width:300, params:{}};(function(){var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0];g.src="https://cdn.adsterra.com/asyncjs.php"; s.parentNode.insertBefore(g,s);})();</script></div>
+
 <h2>Other Pounds values in Kilograms</h2>
 <div class="grid"><a class="chip" href="/weight/pound-to-kilogram/0.25/">0.25 lb</a><a class="chip" href="/weight/pound-to-kilogram/0.5/">0.5 lb</a><a class="chip" href="/weight/pound-to-kilogram/0.75/">0.75 lb</a><a class="chip" href="/weight/pound-to-kilogram/1/">1 lb</a><a class="chip" href="/weight/pound-to-kilogram/3/">3 lb</a><a class="chip" href="/weight/pound-to-kilogram/5/">5 lb</a><a class="chip" href="/weight/pound-to-kilogram/10/">10 lb</a><a class="chip" href="/weight/pound-to-kilogram/12/">12 lb</a><a class="chip" href="/weight/pound-to-kilogram/15/">15 lb</a><a class="chip" href="/weight/pound-to-kilogram/20/">20 lb</a><a class="chip" href="/weight/pound-to-kilogram/25/">25 lb</a><a class="chip" href="/weight/pound-to-kilogram/30/">30 lb</a><a class="chip" href="/weight/pound-to-kilogram/50/">50 lb</a><a class="chip" href="/weight/pound-to-kilogram/100/">100 lb</a><a class="chip" href="/weight/pound-to-kilogram/250/">250 lb</a><a class="chip" href="/weight/pound-to-kilogram/500/">500 lb</a><a class="chip" href="/weight/pound-to-kilogram/1000/">1,000 lb</a><a class="chip" href="/weight/pound-to-kilogram/2000/">2,000 lb</a><a class="chip" href="/weight/pound-to-kilogram/5000/">5,000 lb</a></div>
 <h2>Related Weight / Mass converters</h2>
-<div class="grid"><a class="chip" href="/weight/kilogram-to-kilogram/">Kilograms → Kilograms</a><a class="chip" href="/weight/gram-to-kilogram/">Grams → Kilograms</a><a class="chip" href="/weight/milligram-to-kilogram/">Milligrams → Kilograms</a><a class="chip" href="/weight/metric-ton-to-kilogram/">Metric tons → Kilograms</a><a class="chip" href="/weight/ounce-to-kilogram/">Ounces → Kilograms</a><a class="chip" href="/weight/stone-to-kilogram/">Stones → Kilograms</a><a class="chip" href="/weight/us-ton-to-kilogram/">US short tons → Kilograms</a></div>
+<div class="grid"><a class="chip" href="/weight/gram-to-kilogram/">Grams → Kilograms</a><a class="chip" href="/weight/milligram-to-kilogram/">Milligrams → Kilograms</a><a class="chip" href="/weight/metric-ton-to-kilogram/">Metric tons → Kilograms</a><a class="chip" href="/weight/ounce-to-kilogram/">Ounces → Kilograms</a><a class="chip" href="/weight/stone-to-kilogram/">Stones → Kilograms</a><a class="chip" href="/weight/us-ton-to-kilogram/">US short tons → Kilograms</a></div>
 </main>
 <footer><div class="wrap">
-  <div>© 2026 FreeConvert — free unit converters & calculators.</div>
-  <div><a href="/sitemap.xml">Sitemap</a> · <a href="/robots.txt">Robots</a></div>
+  <div class="fcols">
+    <div>
+      <div class="fbrand">Free<span>Convert</span></div>
+      <p class="fmuted">Free, accurate unit converters and calculators. No sign-up, runs in your browser.</p>
+    </div>
+    <nav class="fnav" aria-label="Footer">
+      <div><h4>Converters</h4>
+        <a href="/length/">Length</a><a href="/weight/">Weight</a>
+        <a href="/temperature/">Temperature</a><a href="/volume/">Volume</a>
+        <a href="/digital/">Digital storage</a><a href="/speed/">Speed</a>
+      </div>
+      <div><h4>Learn</h4>
+        <a href="/guides/">Guides</a>
+        <a href="/guides/metric-vs-imperial/">Metric vs imperial</a>
+        <a href="/guides/temperature-conversions/">Temperature maths</a>
+        <a href="/guides/mass-vs-weight/">Mass vs weight</a>
+      </div>
+      <div><h4>Site</h4>
+        <a href="/about/">About</a>
+        <a href="/methodology/">Methodology</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        <a href="/contact/">Contact</a>
+        <a href="/sitemap.xml">Sitemap</a>
+      </div>
+    </nav>
+  </div>
+  <div class="flegal">© 2026 FreeConvert. Conversions are calculated automatically; verify critical values independently.</div>
 </div></footer>
 </body>
 </html>

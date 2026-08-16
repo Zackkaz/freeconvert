@@ -32,6 +32,7 @@ if ("serviceWorker" in navigator) {
     <a href="/">Home</a>
     <a href="/#categories">Converters</a>
     <a href="/#calc">Calculators</a>
+    <a href="/guides/">Guides</a>
   </nav>
 </div></header>
 <main class="wrap">
@@ -39,24 +40,64 @@ if ("serviceWorker" in navigator) {
 <h1>12 mm to ft</h1>
 <p class="lede">12 mm equals:</p>
 <div class="big">0.03937 ft</div>
-<div class="card conv">
+<div class="card conv" data-cat="length">
   <div class="row">
-    <select id="from"></select>
-    <input id="val" type="number" inputmode="decimal" value="12">
-    <span class="eq">=</span>
-    <select id="to"></select>
+    <label class="lbl" for="from">From</label>
+    <select id="from" aria-label="From unit"></select>
+    <input id="val" type="number" inputmode="decimal" value="12" aria-label="Value to convert">
+    <span class="eq" aria-hidden="true">=</span>
+    <label class="lbl" for="to">To</label>
+    <select id="to" aria-label="To unit"></select>
   </div>
-  <div class="result" id="res">—</div>
+  <div class="controls">
+    <button type="button" id="swap" class="btn small" aria-label="Swap units">⇄ Swap</button>
+    <button type="button" id="reset" class="btn small" aria-label="Reset to defaults">↺ Reset</button>
+    <button type="button" id="copy" class="btn small" aria-label="Copy result">⧉ Copy</button>
+    <label class="preclbl" for="prec">Precision</label>
+    <select id="prec" aria-label="Decimal precision">
+      <option value="auto" selected>Auto</option>
+      <option value="2">2</option><option value="4">4</option>
+      <option value="6">6</option><option value="10">10</option>
+    </select>
+  </div>
+  <div class="result" id="res" aria-live="polite" aria-atomic="true">—</div>
+  <div class="copystat" id="copystat" role="status" aria-live="polite"></div>
 </div>
-<div class="ad"><script type="text/javascript">atOptions = {key:"YOUR_ADSTERRA_KEY_HERE", format:"iframe", height:250, width:300, params:{}};(function(){var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0];g.src="https://cdn.adsterra.com/asyncjs.php"; s.parentNode.insertBefore(g,s);})();</script></div>
+
 <h2>Other Millimeters values in Feet</h2>
 <div class="grid"><a class="chip" href="/length/millimeter-to-foot/0.25/">0.25 mm</a><a class="chip" href="/length/millimeter-to-foot/0.5/">0.5 mm</a><a class="chip" href="/length/millimeter-to-foot/0.75/">0.75 mm</a><a class="chip" href="/length/millimeter-to-foot/1/">1 mm</a><a class="chip" href="/length/millimeter-to-foot/2/">2 mm</a><a class="chip" href="/length/millimeter-to-foot/3/">3 mm</a><a class="chip" href="/length/millimeter-to-foot/5/">5 mm</a><a class="chip" href="/length/millimeter-to-foot/10/">10 mm</a><a class="chip" href="/length/millimeter-to-foot/15/">15 mm</a><a class="chip" href="/length/millimeter-to-foot/20/">20 mm</a><a class="chip" href="/length/millimeter-to-foot/25/">25 mm</a><a class="chip" href="/length/millimeter-to-foot/30/">30 mm</a><a class="chip" href="/length/millimeter-to-foot/50/">50 mm</a><a class="chip" href="/length/millimeter-to-foot/100/">100 mm</a><a class="chip" href="/length/millimeter-to-foot/250/">250 mm</a><a class="chip" href="/length/millimeter-to-foot/500/">500 mm</a><a class="chip" href="/length/millimeter-to-foot/1000/">1,000 mm</a><a class="chip" href="/length/millimeter-to-foot/2000/">2,000 mm</a><a class="chip" href="/length/millimeter-to-foot/5000/">5,000 mm</a></div>
 <h2>Related Length converters</h2>
-<div class="grid"><a class="chip" href="/length/meter-to-foot/">Meters → Feet</a><a class="chip" href="/length/kilometer-to-foot/">Kilometers → Feet</a><a class="chip" href="/length/centimeter-to-foot/">Centimeters → Feet</a><a class="chip" href="/length/micrometer-to-foot/">Micrometers → Feet</a><a class="chip" href="/length/mile-to-foot/">Miles → Feet</a><a class="chip" href="/length/yard-to-foot/">Yards → Feet</a><a class="chip" href="/length/foot-to-foot/">Feet → Feet</a><a class="chip" href="/length/inch-to-foot/">Inches → Feet</a><a class="chip" href="/length/nautical-mile-to-foot/">Nautical miles → Feet</a><a class="chip" href="/length/light-year-to-foot/">Light-years → Feet</a><a class="chip" href="/length/astronomical-unit-to-foot/">Astronomical units → Feet</a></div>
+<div class="grid"><a class="chip" href="/length/meter-to-foot/">Meters → Feet</a><a class="chip" href="/length/kilometer-to-foot/">Kilometers → Feet</a><a class="chip" href="/length/centimeter-to-foot/">Centimeters → Feet</a><a class="chip" href="/length/micrometer-to-foot/">Micrometers → Feet</a><a class="chip" href="/length/mile-to-foot/">Miles → Feet</a><a class="chip" href="/length/yard-to-foot/">Yards → Feet</a><a class="chip" href="/length/inch-to-foot/">Inches → Feet</a><a class="chip" href="/length/nautical-mile-to-foot/">Nautical miles → Feet</a><a class="chip" href="/length/light-year-to-foot/">Light-years → Feet</a><a class="chip" href="/length/astronomical-unit-to-foot/">Astronomical units → Feet</a></div>
 </main>
 <footer><div class="wrap">
-  <div>© 2026 FreeConvert — free unit converters & calculators.</div>
-  <div><a href="/sitemap.xml">Sitemap</a> · <a href="/robots.txt">Robots</a></div>
+  <div class="fcols">
+    <div>
+      <div class="fbrand">Free<span>Convert</span></div>
+      <p class="fmuted">Free, accurate unit converters and calculators. No sign-up, runs in your browser.</p>
+    </div>
+    <nav class="fnav" aria-label="Footer">
+      <div><h4>Converters</h4>
+        <a href="/length/">Length</a><a href="/weight/">Weight</a>
+        <a href="/temperature/">Temperature</a><a href="/volume/">Volume</a>
+        <a href="/digital/">Digital storage</a><a href="/speed/">Speed</a>
+      </div>
+      <div><h4>Learn</h4>
+        <a href="/guides/">Guides</a>
+        <a href="/guides/metric-vs-imperial/">Metric vs imperial</a>
+        <a href="/guides/temperature-conversions/">Temperature maths</a>
+        <a href="/guides/mass-vs-weight/">Mass vs weight</a>
+      </div>
+      <div><h4>Site</h4>
+        <a href="/about/">About</a>
+        <a href="/methodology/">Methodology</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        <a href="/contact/">Contact</a>
+        <a href="/sitemap.xml">Sitemap</a>
+      </div>
+    </nav>
+  </div>
+  <div class="flegal">© 2026 FreeConvert. Conversions are calculated automatically; verify critical values independently.</div>
 </div></footer>
 </body>
 </html>

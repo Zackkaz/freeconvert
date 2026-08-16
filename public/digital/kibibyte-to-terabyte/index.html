@@ -32,33 +32,74 @@ if ("serviceWorker" in navigator) {
     <a href="/">Home</a>
     <a href="/#categories">Converters</a>
     <a href="/#calc">Calculators</a>
+    <a href="/guides/">Guides</a>
   </nav>
 </div></header>
 <main class="wrap">
 <div class="breadcrumb"><a href="https://zackkaz.github.io/">Home</a> › <a href="https://zackkaz.github.io/digital/">Digital Storage</a> › <a href="https://zackkaz.github.io/digital/kibibyte-to-terabyte/">Kibibytes (1024 B) to Terabytes (1e12 B)</a></div>
 <h1>Kibibytes (1024 B) to Terabytes (1e12 B)</h1>
 <p class="lede">Free Kibibytes (1024 B) to Terabytes (1e12 B) converter. Exact digital storage conversion with a live calculator and common values.</p>
-<div class="card conv">
+<div class="card conv" data-cat="digital">
   <div class="row">
-    <select id="from"></select>
-    <input id="val" type="number" inputmode="decimal" value="1">
-    <span class="eq">=</span>
-    <select id="to"></select>
+    <label class="lbl" for="from">From</label>
+    <select id="from" aria-label="From unit"></select>
+    <input id="val" type="number" inputmode="decimal" value="1" aria-label="Value to convert">
+    <span class="eq" aria-hidden="true">=</span>
+    <label class="lbl" for="to">To</label>
+    <select id="to" aria-label="To unit"></select>
   </div>
-  <div class="result" id="res">—</div>
+  <div class="controls">
+    <button type="button" id="swap" class="btn small" aria-label="Swap units">⇄ Swap</button>
+    <button type="button" id="reset" class="btn small" aria-label="Reset to defaults">↺ Reset</button>
+    <button type="button" id="copy" class="btn small" aria-label="Copy result">⧉ Copy</button>
+    <label class="preclbl" for="prec">Precision</label>
+    <select id="prec" aria-label="Decimal precision">
+      <option value="auto" selected>Auto</option>
+      <option value="2">2</option><option value="4">4</option>
+      <option value="6">6</option><option value="10">10</option>
+    </select>
+  </div>
+  <div class="result" id="res" aria-live="polite" aria-atomic="true">—</div>
+  <div class="copystat" id="copystat" role="status" aria-live="polite"></div>
 </div>
-<div class="ad"><script type="text/javascript">atOptions = {key:"YOUR_ADSTERRA_KEY_HERE", format:"iframe", height:250, width:300, params:{}};(function(){var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0];g.src="https://cdn.adsterra.com/asyncjs.php"; s.parentNode.insertBefore(g,s);})();</script></div>
+
 <h2>Common Kibibytes (1024 B) to Terabytes (1e12 B) conversions</h2>
 <table><thead><tr><th>Value</th><th>Terabytes (1e12 B) (TB)</th></tr></thead><tbody><tr><td><a href="/digital/kibibyte-to-terabyte/1/">1 KiB</a></td><td>0 TB</td></tr><tr><td><a href="/digital/kibibyte-to-terabyte/5/">5 KiB</a></td><td>0 TB</td></tr><tr><td><a href="/digital/kibibyte-to-terabyte/10/">10 KiB</a></td><td>0 TB</td></tr><tr><td><a href="/digital/kibibyte-to-terabyte/50/">50 KiB</a></td><td>0 TB</td></tr><tr><td><a href="/digital/kibibyte-to-terabyte/100/">100 KiB</a></td><td>0 TB</td></tr></tbody></table>
 <h2>Frequently asked questions</h2>
 <div class="faq"><details><summary>How many MB in a GB?</summary><p>1 GB = 1000 MB (decimal) or 1024 MiB (binary).</p></details><details><summary>How many bits in a byte?</summary><p>8 bits = 1 byte.</p></details></div>
-<div class="ad"><a href="YOUR_MONETAG_SMARTLINK_URL_HERE" rel="nofollow"><script type="text/javascript" src="//slmonitor.net/script.js" async></script>Open exclusive offers</a></div>
+
 <h2>More Digital Storage converters</h2>
-<div class="grid"><a class="chip" href="/digital/bit-to-terabyte/">Bits → Terabytes (1e12 B)</a><a class="chip" href="/digital/byte-to-terabyte/">Bytes → Terabytes (1e12 B)</a><a class="chip" href="/digital/kilobyte-to-terabyte/">Kilobytes (1000 B) → Terabytes (1e12 B)</a><a class="chip" href="/digital/megabyte-to-terabyte/">Megabytes (1e6 B) → Terabytes (1e12 B)</a><a class="chip" href="/digital/gigabyte-to-terabyte/">Gigabytes (1e9 B) → Terabytes (1e12 B)</a><a class="chip" href="/digital/terabyte-to-terabyte/">Terabytes (1e12 B) → Terabytes (1e12 B)</a><a class="chip" href="/digital/petabyte-to-terabyte/">Petabytes (1e15 B) → Terabytes (1e12 B)</a><a class="chip" href="/digital/mebibyte-to-terabyte/">Mebibytes (1048576 B) → Terabytes (1e12 B)</a><a class="chip" href="/digital/gibibyte-to-terabyte/">Gibibytes (1073741824 B) → Terabytes (1e12 B)</a></div>
+<div class="grid"><a class="chip" href="/digital/bit-to-terabyte/">Bits → Terabytes (1e12 B)</a><a class="chip" href="/digital/byte-to-terabyte/">Bytes → Terabytes (1e12 B)</a><a class="chip" href="/digital/kilobyte-to-terabyte/">Kilobytes (1000 B) → Terabytes (1e12 B)</a><a class="chip" href="/digital/megabyte-to-terabyte/">Megabytes (1e6 B) → Terabytes (1e12 B)</a><a class="chip" href="/digital/gigabyte-to-terabyte/">Gigabytes (1e9 B) → Terabytes (1e12 B)</a><a class="chip" href="/digital/petabyte-to-terabyte/">Petabytes (1e15 B) → Terabytes (1e12 B)</a><a class="chip" href="/digital/mebibyte-to-terabyte/">Mebibytes (1048576 B) → Terabytes (1e12 B)</a><a class="chip" href="/digital/gibibyte-to-terabyte/">Gibibytes (1073741824 B) → Terabytes (1e12 B)</a></div>
 </main>
 <footer><div class="wrap">
-  <div>© 2026 FreeConvert — free unit converters & calculators.</div>
-  <div><a href="/sitemap.xml">Sitemap</a> · <a href="/robots.txt">Robots</a></div>
+  <div class="fcols">
+    <div>
+      <div class="fbrand">Free<span>Convert</span></div>
+      <p class="fmuted">Free, accurate unit converters and calculators. No sign-up, runs in your browser.</p>
+    </div>
+    <nav class="fnav" aria-label="Footer">
+      <div><h4>Converters</h4>
+        <a href="/length/">Length</a><a href="/weight/">Weight</a>
+        <a href="/temperature/">Temperature</a><a href="/volume/">Volume</a>
+        <a href="/digital/">Digital storage</a><a href="/speed/">Speed</a>
+      </div>
+      <div><h4>Learn</h4>
+        <a href="/guides/">Guides</a>
+        <a href="/guides/metric-vs-imperial/">Metric vs imperial</a>
+        <a href="/guides/temperature-conversions/">Temperature maths</a>
+        <a href="/guides/mass-vs-weight/">Mass vs weight</a>
+      </div>
+      <div><h4>Site</h4>
+        <a href="/about/">About</a>
+        <a href="/methodology/">Methodology</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        <a href="/contact/">Contact</a>
+        <a href="/sitemap.xml">Sitemap</a>
+      </div>
+    </nav>
+  </div>
+  <div class="flegal">© 2026 FreeConvert. Conversions are calculated automatically; verify critical values independently.</div>
 </div></footer>
 </body>
 </html>

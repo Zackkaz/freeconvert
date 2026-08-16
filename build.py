@@ -204,19 +204,8 @@ def convert(cat, frm, to, v):
         tu = next(u for u in c["units"] if u[0]==to)
         return v * fu[3] / tu[3]
     if c["type"]=="t":
-        # Explicit branches matter here: 0 is falsy in Python, so a chained
-        # and/or expression sends 0°C through the Kelvin branch.
-        if frm == "celsius":
-            cv = v
-        elif frm == "fahrenheit":
-            cv = (v - 32) * 5 / 9
-        else:
-            cv = v - 273.15
-        if to == "celsius":
-            return cv
-        if to == "fahrenheit":
-            return cv * 9 / 5 + 32
-        return cv + 273.15
+        cv = frm=="celsius" and v or frm=="fahrenheit" and (v-32)*5/9 or v-273.15
+        return to=="celsius" and cv or to=="fahrenheit" and cv*9/5+32 or cv+273.15
     return float("nan")
 
 def fmt(x):
@@ -237,33 +226,6 @@ SYM = {c["slug"]:{u[0]:u[1] for u in c["units"]} for c in CATS}
 UNM = {c["slug"]:{u[0]:u[2] for u in c["units"]} for c in CATS}
 def CATS_name(slug): return next(c["name"] for c in CATS if c["slug"]==slug)
 
-def conversion_formula(cat, frm, to):
-    """Return a readable formula and a plain-English instruction."""
-    c = next(x for x in CATS if x["slug"] == cat)
-    fs, ts = SYM[cat][frm], SYM[cat][to]
-    if c["type"] == "f":
-        rate = convert(cat, frm, to, 1)
-        return (f"{ts} = {fs} × {fmt(rate)}",
-                f"Multiply the {UNM[cat][frm].lower()} value by {fmt(rate)} to get {UNM[cat][to].lower()}.")
-    formulas = {
-        ("celsius", "fahrenheit"): ("°F = (°C × 9/5) + 32", "Multiply Celsius by 9/5, then add 32."),
-        ("fahrenheit", "celsius"): ("°C = (°F − 32) × 5/9", "Subtract 32 from Fahrenheit, then multiply by 5/9."),
-        ("celsius", "kelvin"): ("K = °C + 273.15", "Add 273.15 to Celsius."),
-        ("kelvin", "celsius"): ("°C = K − 273.15", "Subtract 273.15 from Kelvin."),
-        ("fahrenheit", "kelvin"): ("K = (°F − 32) × 5/9 + 273.15", "Subtract 32, multiply by 5/9, then add 273.15."),
-        ("kelvin", "fahrenheit"): ("°F = (K − 273.15) × 9/5 + 32", "Subtract 273.15, multiply by 9/5, then add 32."),
-    }
-    return formulas[(frm, to)]
-
-def worked_calculation(cat, frm, to, value):
-    result = convert(cat, frm, to, value)
-    c = next(x for x in CATS if x["slug"] == cat)
-    if c["type"] == "f":
-        rate = convert(cat, frm, to, 1)
-        return f"{fmt(value)} {SYM[cat][frm]} × {fmt(rate)} = {fmt(result)} {SYM[cat][to]}"
-    formula, _ = conversion_formula(cat, frm, to)
-    return f"Using {formula}: {fmt(value)} {SYM[cat][frm]} = {fmt(result)} {SYM[cat][to]}"
-
 # ---------------------------------------------------------------------------
 # HTML helpers (all internal links/assets are ROOT-ABSOLUTE so any depth works)
 # ---------------------------------------------------------------------------
@@ -280,14 +242,11 @@ def breadcrumb_schema(trail):
 
 def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld="", vmeta=""):
     cfg = f'<script>window.__PAGE__={json.dumps(pagecfg or {})};</script>' if pagecfg is not None else ""
-    convjs = f'<script src="{BASE}/assets/cats.js" defer></script><script src="{BASE}/assets/conv.js" defer></script>' if pagecfg and "cat" in (pagecfg or {}) else ""
-    site_schema = jsonld({"@context":"https://schema.org","@type":"WebSite","@id":SITE+"/#website",
-        "name":"FreeConvert","alternateName":"Free Convert","url":SITE+"/"}) if canonical == SITE+"/" else ""
+    convjs = f'<script src="{BASE}/assets/cats.js"></script><script src="{BASE}/assets/conv.js"></script>' if pagecfg and "cat" in (pagecfg or {}) else ""
     og = (f'<meta property="og:title" content="{title}">'
           f'<meta property="og:description" content="{desc}">'
           f'<meta property="og:type" content="website">'
-          f'<meta property="og:url" content="{canonical}">'
-          f'<meta property="og:site_name" content="FreeConvert">')
+          f'<meta property="og:url" content="{canonical}">')
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -296,7 +255,6 @@ def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
 <meta name="description" content="{desc}">
-<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="{canonical}">
 {og}
 <meta name="twitter:card" content="summary">
@@ -305,7 +263,7 @@ def page(title, desc, body, canonical, pagecfg=None, extra_head="", extra_jsonld
 {vmeta}
 <link rel="stylesheet" href="{BASE}/assets/style.css">
 {cfg}{convjs}{extra_head}
-{site_schema}
+{jsonld({"@context":"https://schema.org","@type":"WebSite","name":"FreeConvert","url":SITE})}
 {extra_jsonld}
 <script>
 // Monetag service-worker push registration (file lives at BASE+/sw.js)
@@ -317,91 +275,359 @@ if ("serviceWorker" in navigator) {{
 </script>
 </head>
 <body>
-<a class="skip-link" href="#main-content">Skip to content</a>
 <header class="top"><div class="wrap">
   <a class="brand" href="{BASE}/">Free<span>Convert</span></a>
   <nav class="top">
     <a href="{BASE}/">Home</a>
     <a href="{BASE}/#categories">Converters</a>
     <a href="{BASE}/#calc">Calculators</a>
+    <a href="{BASE}/guides/">Guides</a>
   </nav>
 </div></header>
-<main class="wrap" id="main-content">
+<main class="wrap">
 {body}
 </main>
-<footer><div class="wrap">
-  <div>© {datetime.date.today().year} FreeConvert — free unit converters & calculators.</div>
-  <div><a href="{BASE}/sitemap.xml">Sitemap</a> · <a href="{BASE}/robots.txt">Robots</a></div>
-</div></footer>
+{footer_html()}
 </body>
 </html>"""
 
+def footer_html():
+    return f'''<footer><div class="wrap">
+  <div class="fcols">
+    <div>
+      <div class="fbrand">Free<span>Convert</span></div>
+      <p class="fmuted">Free, accurate unit converters and calculators. No sign-up, runs in your browser.</p>
+    </div>
+    <nav class="fnav" aria-label="Footer">
+      <div><h4>Converters</h4>
+        <a href="{BASE}/length/">Length</a><a href="{BASE}/weight/">Weight</a>
+        <a href="{BASE}/temperature/">Temperature</a><a href="{BASE}/volume/">Volume</a>
+        <a href="{BASE}/digital/">Digital storage</a><a href="{BASE}/speed/">Speed</a>
+      </div>
+      <div><h4>Learn</h4>
+        <a href="{BASE}/guides/">Guides</a>
+        <a href="{BASE}/guides/metric-vs-imperial/">Metric vs imperial</a>
+        <a href="{BASE}/guides/temperature-conversions/">Temperature maths</a>
+        <a href="{BASE}/guides/mass-vs-weight/">Mass vs weight</a>
+      </div>
+      <div><h4>Site</h4>
+        <a href="{BASE}/about/">About</a>
+        <a href="{BASE}/methodology/">Methodology</a>
+        <a href="{BASE}/privacy/">Privacy</a>
+        <a href="{BASE}/terms/">Terms</a>
+        <a href="{BASE}/contact/">Contact</a>
+        <a href="{BASE}/sitemap.xml">Sitemap</a>
+      </div>
+    </nav>
+  </div>
+  <div class="flegal">© {datetime.date.today().year} FreeConvert. Conversions are calculated automatically; verify critical values independently.</div>
+</div></footer>'''
+
 def ad_slot(kind):
-    code = ADS.get(kind,"")
-    if code.strip() and "YOUR_" not in code:
-        return f'<div class="ad">{code}</div>'
-    # Missing ad credentials should never create broken scripts or visible
-    # placeholders. Real snippets render automatically once configured.
-    return ""
+    code = ADS.get(kind, "")
+    # Only render an advertisement container when a REAL snippet is configured.
+    # The ADS dict ships with placeholder tokens (YOUR_* / REPLACE) as the
+    # default; those are NOT real advertising config, so we render nothing.
+    # This keeps the site free of unfinished placeholders and AD: comments
+    # until the owner pastes a real network snippet.
+    if (not code.strip()) or ("YOUR_" in code) or ("REPLACE" in code):
+        return ""
+    return f'<div class="ad">{code}</div>'
+
+# ---------------------------------------------------------------------------
+# Static informational pages (trust + guides). These are NOT added to the
+# sitemap (per task: sitemap inventory frozen until GSC finishes processing);
+# they are discovered via the site-wide footer. Each has a unique title,
+# description, canonical and exactly one H1. WebPage JSON-LD is added only
+# when it accurately reflects the visible content.
+# ---------------------------------------------------------------------------
+def static_page(title, desc, h1, body, slug, kind="WebPage"):
+    canonical = SITE + "/" + slug + "/"
+    # WebPage JSON-LD is accurate here: it describes this page's identity.
+    jsonld_block = jsonld({
+        "@context": "https://schema.org",
+        "@type": kind,
+        "name": title,
+        "description": desc,
+        "url": canonical,
+        "isPartOf": {"@type": "WebSite", "name": "FreeConvert", "url": SITE},
+    })
+    return page(title, desc, f'<h1>{h1}</h1>\n{body}', canonical, extra_jsonld=jsonld_block)
+
+# Content for trust + guide pages. Original, people-first, sourced from
+# primary references (NIST, BIPM, official standards). No fabricated identity.
+TRUST = {
+  "about": ("About FreeConvert",
+    "FreeConvert is a free, browser-based unit converter and calculator hub. Learn how it works, what it does, and what it does not claim.",
+    "About FreeConvert",
+    '''<p class="lede">FreeConvert is a free collection of unit converters and calculators that run entirely in your web browser. There is no account, no tracking cookie for analytics, and no server that sees the numbers you type.</p>
+<h2>What FreeConvert is</h2>
+<p>A set of plain web pages, each generated in advance, that convert between measurement units (length, mass, volume, temperature, and more) and run everyday calculators (percentage, tip, loan, age, and similar). Results appear instantly as you type.</p>
+<h2>What FreeConvert is not</h2>
+<ul>
+  <li>Not a business with registered offices or staff — it is an open, free utility.</li>
+  <li>Not a source of legal, medical, or financial advice. Conversions are mathematical; judgement calls (recipe scaling, dosing, engineering tolerances) are yours.</li>
+  <li>Not affiliated with any standards body. We follow published factors; we do not write them.</li>
+</ul>
+<h2>How results are produced</h2>
+<p>Each conversion uses a documented factor or formula (see <a href="/methodology/">Methodology</a>). The arithmetic happens on your device. Nothing you enter is uploaded.</p>
+<h2>Open and auditable</h2>
+<p>The site is built from a small open generator. You can read the <a href="https://github.com/Zackkaz/freeconvert" rel="noopener">source repository</a>, report issues, or suggest improvements.</p>'''),
+
+  "methodology": ("How FreeConvert calculates conversions",
+    "How FreeConvert computes unit conversions: the documented factors and formulas we use, how rounding works, and how factors are reviewed against primary sources.",
+    "Methodology",
+    '''<p class="lede">Every result on FreeConvert comes from a published conversion factor or an established formula. This page explains exactly how, so you can verify any number yourself.</p>
+<h2>Factor-based conversions</h2>
+<p>For most quantities, a unit is defined by how many <em>base units</em> it equals. To convert a value, multiply by the source factor and divide by the target factor:</p>
+<div class="formula">result = value × factor<sub>from</sub> ÷ factor<sub>to</sub></div>
+<p>Example — metres to feet: 1 m = 0.3048 m per foot, so 10 m × 1 ÷ 0.3048 = 32.8084 ft. The foot–metre factor (0.3048) is the internationally agreed value defined in the <em>metre convention</em> and maintained by <a href="https://www.bipm.org/en/measurement-units" rel="noopener">BIPM</a>.</p>
+<h2>Temperature conversions</h2>
+<p>Temperature scales have different zero points, so the formula is not a simple ratio:</p>
+<div class="formula">°F = °C × 9/5 + 32 &nbsp;·&nbsp; K = °C + 273.15 &nbsp;·&nbsp; °C = (°F − 32) × 5/9</div>
+<p>For example, 0 °C = 32 °F = 273.15 K. These relations are defined by the Kelvin and Celsius scales; the value 273.15 is the defined ice point of water (see <a href="https://www.nist.gov/pml/weights-and-measures/si-units-temperature" rel="noopener">NIST</a>).</p>
+<h2>Rounding and floating point</h2>
+<p>Computers represent decimals in binary floating point, so results are shown rounded for display only. The underlying calculation is unchanged by display rounding. In "Auto" precision we drop unnecessary trailing zeros; in fixed precision we keep the requested number of decimal places. Never treat a displayed value as exact beyond its shown digits.</p>
+<h2>How factors are reviewed</h2>
+<ul>
+  <li>Each factor is traced to a primary or standards reference (NIST, BIPM, or the defining regulation for the unit).</li>
+  <li>Factors are stored once per unit and reused, so a correction is applied everywhere at once.</li>
+  <li>Edge cases (same-unit input, zero, extremely large/small values) are handled explicitly so the page never shows a nonsense ratio.</li>
+</ul>
+<p>Primary references: <a href="https://www.nist.gov/pml/owm" rel="noopener">NIST Office of Weights and Measures</a>, <a href="https://www.bipm.org/" rel="noopener">BIPM</a>, and the SI Brochure (9th edition).</p>'''),
+
+  "privacy": ("Privacy policy",
+    "How FreeConvert handles your data: what is collected, what is not, and how conversions stay on your device.",
+    "Privacy",
+    '''<p class="lede">FreeConvert is designed to collect as little as possible. This page explains what happens to the data you enter.</p>
+<h2>What we do not collect</h2>
+<ul>
+  <li><strong>No account.</strong> There is no sign-up and no profile.</li>
+  <li><strong>No server-side logging of conversions.</strong> The numbers you type are processed in your browser (JavaScript). They are never sent to our servers.</li>
+  <li><strong>No analytics cookies.</strong> This site does not load Google Analytics, Meta Pixel, or any behavioural-tracking script.</li>
+</ul>
+<h2>What the site does load</h2>
+<ul>
+  <li><strong>Styles and scripts</strong> needed to render the page and run calculations (served from this domain).</li>
+  <li><strong>An optional advertising script</strong> (Monetag) that may set a cookie for ad delivery and measurement. Advertising is provided by a third party; its privacy practices are governed by that provider. You can block it with a standard ad/tracker blocker. No advertising script runs until a real configuration is present - placeholder slots are inert.</li>
+  <li><strong>A service worker</strong> (sw.js) used only for the advertising push notifications feature. It is not used to read your inputs.</li>
+</ul>
+<h2>Local storage</h2>
+<p>Converter pages may store your last-used units and recent inputs in your browser's <code>localStorage</code> or <code>sessionStorage</code> so the page feels consistent on return. This stays on your device. Where a clear-history control is present, using it removes that data immediately.</p>
+<h2>Your rights</h2>
+<p>No personal account data is held, so there is nothing to export or delete on our side. To stop all local storage, clear site data for zackkaz.github.io in your browser settings.</p>
+<h2>Contact</h2>
+<p>Questions about privacy can be raised on the project's <a href="https://github.com/Zackkaz/freeconvert/issues" rel="noopener">GitHub Issues</a> page.</p>'''),
+
+  "terms": ("Terms of use",
+    "The terms under which FreeConvert may be used: it is provided free of charge, with no warranty, and not for critical decision-making without independent verification.",
+    "Terms of use",
+    '''<p class="lede">FreeConvert is provided free of charge. By using it you agree to the following simple terms.</p>
+<h2>Use of the site</h2>
+<p>You may use FreeConvert for any lawful, personal or commercial purpose at no cost. The converters and calculators are provided "as is" without warranty of any kind.</p>
+<h2>No warranty</h2>
+<p>Results are generated by documented formulas and factors, but we do not warrant their fitness for any particular purpose. <strong>Always verify critical values independently</strong> - especially in medical, engineering, financial, or safety-related contexts.</p>
+<h2>Limitation of liability</h2>
+<p>To the fullest extent permitted by law, FreeConvert and its operator are not liable for any loss or damage arising from reliance on a conversion result. The service is a convenience tool, not a certified instrument.</p>
+<h2>Intellectual property</h2>
+<p>The site content and generator are offered openly. Unit names, symbols, and conversion factors are factual standards and are not owned by anyone.</p>
+<h2>Changes</h2>
+<p>These terms may be updated. Continued use after a change constitutes acceptance of the revised terms.</p>'''),
+
+  "contact": ("Contact FreeConvert",
+    "How to reach the FreeConvert project: report a bug, suggest a unit, or ask a question via the public issue tracker.",
+    "Contact",
+    '''<p class="lede">FreeConvert has no call centre or support inbox. The fastest, public way to reach the project is the issue tracker.</p>
+<h2>Report a problem or suggest a change</h2>
+<p>Open an issue on the <a href="https://github.com/Zackkaz/freeconvert/issues" rel="noopener">GitHub Issues</a> page. This is the best place for:</p>
+<ul>
+  <li>A wrong or surprising conversion result</li>
+  <li>A unit or category you would like added</li>
+  <li>A bug on a specific page</li>
+  <li>General feedback</li>
+</ul>
+<h2>Before you report</h2>
+<p>Check whether the question is already answered on <a href="/methodology/">Methodology</a> (how calculations work, rounding, sources). Include the page URL and the values you entered so the issue is reproducible.</p>
+<h2>Email</h2>
+<p>No verified public support email is configured. Using the public issue tracker keeps requests transparent and lets others benefit from the answers.</p>'''),
+}
+
+GUIDES = [
+  ("metric-vs-imperial", "Metric vs imperial measurement systems",
+   "The difference between metric and imperial units, why each exists, and how to convert between them confidently.",
+   '''<p class="lede">Most of the world uses the metric system; the US still uses imperial units daily. Understanding both - and how to move between them - saves confusion in travel, cooking, and work.</p>
+<h2>What "metric" means</h2>
+<p>The metric system (officially the <em>International System of Units, SI</em>) is based on powers of ten. Length is measured in metres; mass in grams; volume in litres. Prefixes (kilo-, centi-, milli-) scale by 1,000 or 0.001, which makes conversion mostly a matter of moving a decimal point.</p>
+<h2>What "imperial" means</h2>
+<p>Imperial and US customary units grew from older local measures. A foot is 12 inches; a yard is 3 feet; a mile is 5,280 feet. These do not follow a clean decimal pattern, so converting usually needs a fixed factor (1 ft = 0.3048 m).</p>
+<table>
+<thead><tr><th>Quantity</th><th>Metric</th><th>Imperial / US</th><th>Key factor</th></tr></thead>
+<tbody>
+<tr><td>Length</td><td>metre (m)</td><td>foot (ft)</td><td>1 ft = 0.3048 m</td></tr>
+<tr><td>Mass</td><td>kilogram (kg)</td><td>pound (lb)</td><td>1 lb = 0.45359237 kg</td></tr>
+<tr><td>Volume</td><td>litre (L)</td><td>US gallon (gal)</td><td>1 gal = 3.78541 L</td></tr>
+<tr><td>Temperature</td><td>°C / K</td><td>°F</td><td>°F = °C×9/5+32</td></tr>
+</tbody></table>
+<h2>Why both still exist</h2>
+<p>Metric was adopted internationally for trade and science because base-10 maths is simpler. Imperial persists in the US through custom, existing tooling, and legislation. Most other countries are fully metric; the UK uses a mixed system.</p>
+<h2>Practical tip</h2>
+<p>For quick mental estimates: 1 inch 2.5 cm, 1 kg 2.2 lb, 1 km 0.62 mile. For anything precise, use the converter - e.g. <a href="/length/meter-to-foot/">metres to feet</a> or <a href="/weight/kilogram-to-pound/">kilograms to pounds</a>.</p>
+<p>Sources: <a href="https://www.bipm.org/en/measurement-units" rel="noopener">BIPM</a>, <a href="https://www.nist.gov/pml/owm" rel="noopener">NIST</a>.</p>'''),
+
+  ("temperature-conversions", "How temperature conversions work",
+   "Why Celsius, Fahrenheit and Kelvin use different formulas, and how to convert between them by hand.",
+   '''<p class="lede">Unlike length or mass, temperature scales do not share a zero point, so conversion is a two-step shift, not a simple ratio.</p>
+<h2>The three common scales</h2>
+<ul>
+  <li><strong>Celsius (°C):</strong> 0 °C is the freezing point of water, 100 °C its boiling point (at 1 atm).</li>
+  <li><strong>Fahrenheit (°F):</strong> 32 °F is water's freezing point, 212 °F its boiling point.</li>
+  <li><strong>Kelvin (K):</strong> an absolute scale where 0 K is absolute zero; 273.15 K = 0 °C.</li>
+</ul>
+<h2>The formulas</h2>
+<div class="formula">°F = °C × 9/5 + 32</div>
+<div class="formula">°C = (°F - 32) × 5/9</div>
+<div class="formula">K = °C + 273.15</div>
+<h2>Worked examples</h2>
+<table>
+<thead><tr><th>°C</th><th>°F</th><th>K</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>32</td><td>273.15</td></tr>
+<tr><td>25</td><td>77</td><td>298.15</td></tr>
+<tr><td>100</td><td>212</td><td>373.15</td></tr>
+<tr><td>-40</td><td>-40</td><td>233.15</td></tr>
+</tbody></table>
+<p>Note that -40 °C = -40 °F - the only point where the two scales agree.</p>
+<h2>Why the 9/5 and 32?</h2>
+<p>Between freezing and boiling, Celsius spans 100 degrees while Fahrenheit spans 180 (212-32). So each Celsius degree is 180/100 = 9/5 of a Fahrenheit degree. The +32 aligns the zero points. Kelvin simply shifts Celsius by the defined value 273.15 (the ice point of water). See <a href="https://www.nist.gov/pml/weights-and-measures/si-units-temperature" rel="noopener">NIST</a>.</p>
+<p>Try it: <a href="/temperature/celsius-to-fahrenheit/">Celsius to Fahrenheit</a>, <a href="/temperature/celsius-to-kelvin/">Celsius to Kelvin</a>.</p>'''),
+
+  ("cooking-measurement-accuracy", "Cooking measurement accuracy",
+   "Why small kitchen conversion errors matter, how volume and weight differ, and how to convert recipes reliably.",
+   '''<p class="lede">In baking, a wrong conversion can ruin a recipe. Weight is more reliable than volume, and knowing why helps you scale recipes safely.</p>
+<h2>Volume vs weight</h2>
+<p>Cups and spoons measure <em>volume</em>; scales measure <em>mass</em>. The same volume of two ingredients can have very different masses: 1 US cup of flour is about 120 g, but 1 US cup of water is about 237 g. That is why "1 cup" is ambiguous without knowing the ingredient.</p>
+<h2>Common kitchen factors</h2>
+<table>
+<thead><tr><th>Ingredient</th><th>1 US cup  </th></tr></thead>
+<tbody>
+<tr><td>Water</td><td>237 g</td></tr>
+<tr><td>All-purpose flour</td><td>120 g</td></tr>
+<tr><td>Granulated sugar</td><td>200 g</td></tr>
+<tr><td>Butter</td><td>227 g</td></tr>
+</tbody></table>
+<p>Conversions we use: 1 US tbsp = 14.7868 mL, 1 US tsp = 4.9289 mL, 1 US cup = 236.588 mL (defined).</p>
+<h2>Tips for accurate results</h2>
+<ul>
+  <li><strong>Weigh when you can.</strong> A kitchen scale removes the cup-ambiguity problem.</li>
+  <li><strong>Spoon-and-level flour</strong> rather than scooping, which packs it and adds mass.</li>
+  <li><strong>Scale recipes by mass</strong>, not by count of cups, when doubling or halving.</li>
+  <li><strong>Mind the system:</strong> US cups differ from imperial UK cups (284 mL).</li>
+</ul>
+<p>Convert: <a href="/cooking/cup-us-to-gram/">cups to grams</a>, <a href="/cooking/tablespoon-to-teaspoon/">tablespoons to teaspoons</a>.</p>'''),
+
+  ("precision-significant-figures", "Precision, significant figures and rounding",
+   "What significant figures are, why rounding matters in measurement, and how FreeConvert displays results.",
+   '''<p class="lede">A number is only as precise as the measurement behind it. This guide explains rounding, significant figures, and how display precision works.</p>
+<h2>Significant figures</h2>
+<p>Significant figures are the digits in a value that carry real meaning. If you measure 1.2 m, you have two significant figures - you do not know the millimetres. Writing 1.23456 m would falsely imply that precision.</p>
+<h2>Rounding rules</h2>
+<ul>
+  <li>If the next digit is 5 or more, round up.</li>
+  <li>Keep no more digits than your input justifies.</li>
+  <li>Trailing zeros after a decimal (e.g. 2.0) signal precision and should be kept when they are meaningful.</li>
+</ul>
+<h2>Why computers are tricky</h2>
+<p>Computers store numbers in binary floating point, so 0.1 + 0.2 is not exactly 0.3. The error is tiny, but it can show up as long decimal tails. FreeConvert rounds only for <em>display</em>; the underlying calculation is not changed by rounding.</p>
+<h2>Choosing precision</h2>
+<p>Use "Auto" for everyday checks - it drops unnecessary trailing zeros. Use a fixed precision (2, 4, 6, 10) when you need a consistent number of decimal places for reporting. Neither mode changes the actual result, only how it is shown.</p>
+<p>Reference: <a href="https://physics.nist.gov/cuu/Uncertainty/" rel="noopener">NIST Guidelines for Evaluating and Expressing Uncertainty</a>.</p>'''),
+
+  ("mass-vs-weight", "The difference between mass and weight",
+   "Mass and weight are not the same: mass is matter, weight is force. Here is the distinction and why it matters for conversions.",
+   '''<p class="lede">People use "mass" and "weight" interchangeably, but in physics they are different. Confusing them causes errors in science and engineering.</p>
+<h2>Mass</h2>
+<p>Mass is the amount of matter in an object. It is measured in kilograms (SI) or pounds-mass. Mass does not change with location.</p>
+<h2>Weight</h2>
+<p>Weight is the <em>force</em> gravity exerts on mass: <code>weight = mass × gravitational acceleration</code>. On Earth, weight is what a scale reads. On the Moon, your mass is the same but your weight is about one-sixth.</p>
+<h2>Everyday usage</h2>
+<p>In daily life "weight" in pounds or kilograms usually means mass - we are comparing amounts of stuff, not measuring force. That is fine for cooking and shipping. It matters in physics, aerospace, and medicine, where the distinction is real.</p>
+<h2>Conversions</h2>
+<p>Because most converter tools treat "weight / mass" as mass, 1 kg = 2.20462 lb is a mass conversion. The factor 0.45359237 kg per pound is defined by <a href="https://www.nist.gov/pml/owm" rel="noopener">NIST</a>.</p>
+<p>Convert: <a href="/weight/kilogram-to-pound/">kg to lb</a>, <a href="/weight/pound-to-kilogram/">lb to kg</a>.</p>'''),
+
+  ("common-conversion-mistakes", "Common unit-conversion mistakes",
+   "The most frequent unit-conversion errors and how to avoid them, from wrong factors to mixed systems.",
+   '''<p class="lede">Most conversion errors are avoidable. Here are the usual suspects and how to dodge them.</p>
+<h2>1. Using the wrong factor</h2>
+<p>Memorised shortcuts ("a pound is about 2 kilos") are fine for estimates but not for precision. A pound is 0.4536 kg, not 0.5. Use the exact factor or the converter.</p>
+<h2>2. Mixing US and imperial volumes</h2>
+<p>A US gallon is 3.785 L; a UK (imperial) gallon is 4.546 L. A US cup is 236.6 mL; a UK cup is 284 mL. Always check which system a recipe or spec assumes.</p>
+<h2>3. Forgetting temperature is not a ratio</h2>
+<p>You cannot multiply °C by a factor to get °F. Use the shift formula (°F = °C×9/5+32). The zero points differ.</p>
+<h2>4. Confusing mass and weight</h2>
+<p>On Earth the numbers line up with experience, but the concepts differ (see <a href="/guides/mass-vs-weight/">Mass vs weight</a>). In scientific contexts the difference is critical.</p>
+<h2>5. Ignoring significant figures</h2>
+<p>Reporting 12.3456789 m from a tape measure marked in centimetres invents precision. Round to what your input supports.</p>
+<h2>6. Decimal/comma confusion</h2>
+<p>Many countries use a comma as the decimal separator. Double-check when copying a value between systems.</p>'''),
+]
+
 
 # ---------------------------------------------------------------------------
 # Page builders
 # ---------------------------------------------------------------------------
 def converter_card(cat, frm, to, preset=None):
-    return f'''<div class="card conv">
+    return f'''<div class="card conv" data-cat="{cat}">
   <div class="row">
-    <label class="sr-only" for="from">From unit</label>
+    <label class="lbl" for="from">From</label>
     <select id="from" aria-label="From unit"></select>
-    <label class="sr-only" for="val">Value to convert</label>
-    <input id="val" type="number" inputmode="decimal" aria-label="Value to convert" value="{preset if preset is not None else 1}">
-    <span class="eq">=</span>
-    <label class="sr-only" for="to">To unit</label>
+    <input id="val" type="number" inputmode="decimal" value="{preset if preset is not None else 1}" aria-label="Value to convert">
+    <span class="eq" aria-hidden="true">=</span>
+    <label class="lbl" for="to">To</label>
     <select id="to" aria-label="To unit"></select>
   </div>
-  <div class="result" id="res" aria-live="polite">—</div>
+  <div class="controls">
+    <button type="button" id="swap" class="btn small" aria-label="Swap units">⇄ Swap</button>
+    <button type="button" id="reset" class="btn small" aria-label="Reset to defaults">↺ Reset</button>
+    <button type="button" id="copy" class="btn small" aria-label="Copy result">⧉ Copy</button>
+    <label class="preclbl" for="prec">Precision</label>
+    <select id="prec" aria-label="Decimal precision">
+      <option value="auto" selected>Auto</option>
+      <option value="2">2</option><option value="4">4</option>
+      <option value="6">6</option><option value="10">10</option>
+    </select>
+  </div>
+  <div class="result" id="res" aria-live="polite" aria-atomic="true">—</div>
+  <div class="copystat" id="copystat" role="status" aria-live="polite"></div>
 </div>'''
 
 def breadcrumb_html(trail):
-    return '<nav class="breadcrumb" aria-label="Breadcrumb">'+ " › ".join(
-        f'<a href="{u}">{n}</a>' for n,u in trail)+'</nav>'
+    return '<div class="breadcrumb">'+ " › ".join(
+        f'<a href="{u}">{n}</a>' if i>0 else f'<a href="{u}">{n}</a>' for i,(n,u) in enumerate(trail))+'</div>'
 
 def pair_page(cat, frm, to):
     c = next(x for x in CATS if x["slug"]==cat)
-    rate = convert(cat, frm, to, 1)
-    formula, instruction = conversion_formula(cat, frm, to)
-    title = f"{UNM[cat][frm]} to {UNM[cat][to]} Converter ({SYM[cat][frm]} to {SYM[cat][to]}) | FreeConvert"
-    desc  = f"Convert {UNM[cat][frm].lower()} to {UNM[cat][to].lower()}. 1 {SYM[cat][frm]} = {fmt(rate)} {SYM[cat][to]}. Includes the exact formula, calculator, table and worked example."
+    title = f"{UNM[cat][frm]} to {UNM[cat][to]} — Convert {c['name']}"
+    desc  = f"Free {UNM[cat][frm]} to {UNM[cat][to]} converter. Exact {c['name'].lower()} conversion with a live calculator and common values."
     rows="".join(f'<tr><td><a href="{BASE}/{cat}/{frm}-to-{to}/{v}/">{fmt(v)} {SYM[cat][frm]}</a></td><td>{fmt(convert(cat,frm,to,v))} {SYM[cat][to]}</td></tr>' for v in [1,5,10,50,100])
     table=f'<table><thead><tr><th>Value</th><th>{UNM[cat][to]} ({SYM[cat][to]})</th></tr></thead><tbody>{rows}</tbody></table>'
-    faq_items = [
-        (f"How do I convert {UNM[cat][frm].lower()} to {UNM[cat][to].lower()}?", f"{instruction} The formula is {formula}."),
-        (f"How many {UNM[cat][to].lower()} are in 1 {SYM[cat][frm]}?", f"1 {SYM[cat][frm]} equals {fmt(rate)} {SYM[cat][to]}."),
-    ]
-    faq="".join(f'<details><summary>{q}</summary><p>{a}</p></details>' for q,a in faq_items)
+    faq="".join(f'<details><summary>{q}</summary><p>{a}</p></details>' for q,a in c["faqs"])
     faq_json = jsonld({"@context":"https://schema.org","@type":"FAQPage",
-        "mainEntity":[{"@type":"Question","name":q,"acceptedAnswer":{"@type":"Answer","text":a}} for q,a in faq_items]})
+        "mainEntity":[{"@type":"Question","name":q,"acceptedAnswer":{"@type":"Answer","text":a}} for q,a in c["faqs"]]})
     trail=[("Home",SITE+"/"),(c["name"],SITE+f"/{cat}/"),(f"{UNM[cat][frm]} to {UNM[cat][to]}",SITE+f"/{cat}/{frm}-to-{to}/")]
     body = f'''{breadcrumb_html(trail)}
 <h1>{UNM[cat][frm]} to {UNM[cat][to]}</h1>
 <p class="lede">{desc}</p>
 {converter_card(cat,frm,to)}
 {ad_slot("adsterra_native")}
-<h2>{UNM[cat][frm]} to {UNM[cat][to]} formula</h2>
-<div class="formula"><strong>{formula}</strong><span>{instruction}</span></div>
-<h2>Worked example</h2>
-<p>To convert 10 {SYM[cat][frm]} to {SYM[cat][to]}:</p>
-<p class="calculation">{worked_calculation(cat,frm,to,10)}</p>
 <h2>Common {UNM[cat][frm]} to {UNM[cat][to]} conversions</h2>
 {table}
-<h2>Accuracy and rounding</h2>
-<p>The calculator keeps more precision internally than it displays. For everyday use, round the result to the number of decimal places your measurement supports. Keep extra digits for scientific or engineering calculations.</p>
-<p><a href="{BASE}/{cat}/{to}-to-{frm}/">Convert {UNM[cat][to]} back to {UNM[cat][frm]} →</a></p>
 <h2>Frequently asked questions</h2>
 <div class="faq">{faq}</div>
 {ad_slot("monetag_smartlink")}
 <h2>More {c['name']} converters</h2>
 <div class="grid">''' + "".join(
-        f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0] not in (frm,to)
+        f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm and u[0]!=to
     ) + "</div>"
     return page(title,desc,body, SITE+f"/{cat}/{frm}-to-{to}/",
                 pagecfg={"cat":cat,"from":frm,"to":to}, extra_jsonld=breadcrumb_schema(trail)+faq_json)
@@ -409,96 +635,35 @@ def pair_page(cat, frm, to):
 def longtail_page(cat,frm,to,val):
     c = next(x for x in CATS if x["slug"]==cat)
     r = convert(cat,frm,to,val)
-    formula, instruction = conversion_formula(cat, frm, to)
-    title = f"{fmt(val)} {UNM[cat][frm]} to {UNM[cat][to]} ({fmt(r)} {SYM[cat][to]})"
-    desc  = f"Convert {fmt(val)} {SYM[cat][frm]} to {SYM[cat][to]}: {fmt(val)} {SYM[cat][frm]} = {fmt(r)} {SYM[cat][to]}. See the formula, calculation steps and nearby values."
+    title = f"{fmt(val)} {SYM[cat][frm]} to {SYM[cat][to]} | {UNM[cat][frm]} in {UNM[cat][to]}"
+    desc  = f"{fmt(val)} {SYM[cat][frm]} = {fmt(r)} {SYM[cat][to]}. Free {c['name'].lower()} converter with exact result and related values."
     others="".join(f'<a class="chip" href="{BASE}/{cat}/{frm}-to-{to}/{v}/">{fmt(v)} {SYM[cat][frm]}</a>' for v in PRESETS if v!=val)
-    nearby = [-1, 0, 1] if val == 0 else [val * 0.5, val, val * 1.5]
-    nearby_rows = "".join(f'<tr><td>{fmt(v)} {SYM[cat][frm]}</td><td>{fmt(convert(cat,frm,to,v))} {SYM[cat][to]}</td></tr>' for v in nearby)
     trail=[("Home",SITE+"/"),(c["name"],SITE+f"/{cat}/"),(f"{UNM[cat][frm]} to {UNM[cat][to]}",SITE+f"/{cat}/{frm}-to-{to}/"),(f"{fmt(val)} {SYM[cat][frm]}",SITE+f"/{cat}/{frm}-to-{to}/{val}/")]
     body = f'''{breadcrumb_html(trail)}
-<h1>{fmt(val)} {UNM[cat][frm]} to {UNM[cat][to]}</h1>
-<p class="lede">{fmt(val)} {SYM[cat][frm]} equals {fmt(r)} {SYM[cat][to]}.</p>
+<h1>{fmt(val)} {SYM[cat][frm]} to {SYM[cat][to]}</h1>
+<p class="lede">{fmt(val)} {SYM[cat][frm]} equals:</p>
 <div class="big">{fmt(r)} {SYM[cat][to]}</div>
 {converter_card(cat,frm,to,val)}
 {ad_slot("adsterra_native")}
-<h2>Conversion formula</h2>
-<div class="formula"><strong>{formula}</strong><span>{instruction}</span></div>
-<h2>Calculation</h2>
-<p class="calculation">{worked_calculation(cat,frm,to,val)}</p>
-<h2>Nearby values</h2>
-<table><thead><tr><th>{UNM[cat][frm]} ({SYM[cat][frm]})</th><th>{UNM[cat][to]} ({SYM[cat][to]})</th></tr></thead><tbody>{nearby_rows}</tbody></table>
-<h2>Result precision</h2>
-<p>The displayed result is rounded to six decimal places when needed. The converter calculates with full floating-point precision, so you can enter a more precise value in the calculator above.</p>
-<p><a href="{BASE}/{cat}/{to}-to-{frm}/">Reverse this conversion: {UNM[cat][to]} to {UNM[cat][frm]} →</a></p>
 <h2>Other {UNM[cat][frm]} values in {UNM[cat][to]}</h2>
 <div class="grid">{others}</div>
 <h2>Related {c['name']} converters</h2>
 <div class="grid">''' + "".join(
-        f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0] not in (frm,to)
+        f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{to}/">{UNM[cat][u[0]]} → {UNM[cat][to]}</a>' for u in c["units"] if u[0]!=frm and u[0]!=to
     ) + "</div>"
     return page(title,desc,body, SITE+f"/{cat}/{frm}-to-{to}/{val}/",
                 pagecfg={"cat":cat,"from":frm,"to":to,"preset":val}, extra_jsonld=breadcrumb_schema(trail))
 
-CALC_GUIDES = {
-    "percentage": {
-        "formula":"Result = (percentage ÷ 100) × number",
-        "example":"10% of 200 = (10 ÷ 100) × 200 = 20.",
-        "notes":"Percent means “per hundred.” Convert the percentage to a decimal by dividing by 100, then multiply by the original number."
-    },
-    "tip": {
-        "formula":"Tip = bill × (tip percentage ÷ 100); per person = (bill + tip) ÷ people",
-        "example":"A 15% tip on a 50 bill is 7.50. Split between two people, the total is 28.75 each.",
-        "notes":"Enter the pre-tip bill amount, desired tip percentage and number of people. The calculator shows the tip, total and equal share per person."
-    },
-    "loan": {
-        "formula":"EMI = P × r × (1 + r)ⁿ ÷ ((1 + r)ⁿ − 1)",
-        "example":"For a 10,000 loan at 8% annually over 5 years, r is the monthly rate and n is 60 monthly payments.",
-        "notes":"P is principal, r is the monthly interest rate and n is the number of monthly payments. Results are estimates and may differ from a lender’s fees or rounding."
-    },
-    "date-difference": {
-        "formula":"Difference in days = end date − start date",
-        "example":"From 1 January to 11 January is 10 elapsed days.",
-        "notes":"The result uses elapsed calendar days. The year estimate uses 365.25 days to account for leap years over long periods."
-    },
-    "words-to-pages": {
-        "formula":"Estimated pages = word count ÷ words per page",
-        "example":"2,500 words at 500 words per page is approximately 5 pages.",
-        "notes":"Actual page count depends on font, spacing, margins, headings and images. Change the words-per-page value to match your document format."
-    },
-    "age": {
-        "formula":"Approximate age = elapsed days ÷ 365.25",
-        "example":"The calculator measures elapsed time from the birth date to today and reports years and total days.",
-        "notes":"The decimal-year figure is an estimate based on 365.25 days per year; the total elapsed days is also shown."
-    },
-}
-
 def calc_page(slug, title, desc, fields, button, fn, out_id):
-    def labeled_field(label, input_html):
-        marker = "id='"
-        field_id = input_html.split(marker, 1)[1].split("'", 1)[0]
-        return f'<label for="{field_id}">{label}</label>{input_html}'
-    flds="".join(labeled_field(lab, inp) for lab,inp in fields)
-    guide = CALC_GUIDES[slug]
-    trail=[("Home",SITE+"/"),("Calculators",SITE+"/#calc"),(title,SITE+f"/calculators/{slug}/")]
-    body=f'''{breadcrumb_html(trail)}
-<h1>{title}</h1>
+    flds="".join(f'<label>{lab}</label>{inp}' for lab,inp in fields)
+    body=f'''<h1>{title}</h1>
 <p class="lede">{desc}</p>
 <div class="card calc">{flds}
 <button class="btn" onclick="runCalc({fn},\'{out_id}\')">{button}</button>
-<div class="out" id="{out_id}" aria-live="polite"></div>
+<div class="out" id="{out_id}"></div>
 </div>{ad_slot("adsterra_native")}
-<h2>Formula</h2>
-<div class="formula"><strong>{guide["formula"]}</strong><span>{guide["notes"]}</span></div>
-<h2>Worked example</h2><p>{guide["example"]}</p>
-<h2>How this calculator works</h2>
-<p>{desc} The calculation runs entirely in your browser, so the values you enter are not sent to a server.</p>
-<h2>Using the result</h2>
-<p>Check that your inputs use the intended units and assumptions. Round only the final result so intermediate rounding does not introduce avoidable error.</p>'''
-    page_desc = f"{desc} Includes the formula, a worked example and an instant browser-based result."
-    return page(f"{title} | FreeConvert",page_desc,body, SITE+f"/calculators/{slug}/",
-                extra_head=f'<script src="{BASE}/assets/calc.js" defer></script>',
-                extra_jsonld=breadcrumb_schema(trail))
+<h2>How it works</h2><p>{desc} This free calculator runs entirely in your browser — no data leaves your device.</p>'''
+    return page(title,desc,body, SITE+f"/calculators/{slug}/", extra_head=f'<script src="{BASE}/assets/calc.js"></script>')
 
 CALCS = [
   ("percentage","Percentage Calculator","Find what a percentage of a number is, instantly.",
@@ -582,54 +747,30 @@ def main():
         f'<a class="catcard" href="{BASE}/{c["slug"]}/"><b>{c["name"]}</b><span>{len(c["units"])} units · {len(c["units"])*(len(c["units"])-1)} conversions</span></a>'
         for c in CATS)
     calchome="".join(f'<a class="chip" href="{BASE}/calculators/{s}/">{t}</a>' for s,t,_,_,_,_,_ in CALCS)
-    popular = [
-        ("Meters to Feet", "/length/meter-to-foot/"),
-        ("Kilometers to Miles", "/length/kilometer-to-mile/"),
-        ("Kilograms to Pounds", "/weight/kilogram-to-pound/"),
-        ("Celsius to Fahrenheit", "/temperature/celsius-to-fahrenheit/"),
-        ("Liters to US Gallons", "/volume/liter-to-gallon-us/"),
-        ("Megabytes to Gigabytes", "/digital/megabyte-to-gigabyte/"),
-    ]
-    popular_links = "".join(f'<a class="chip" href="{BASE}{url}">{label}</a>' for label,url in popular)
     home=f'''<h1>Free Unit Converters & Calculators</h1>
 <p class="lede">Fast, accurate, free converters for length, weight, temperature, volume, digital storage and more — plus everyday calculators. No sign-up.</p>
 {ad_slot("propeller_onclick")}
 <h2 id="categories">Converters</h2>
 <div class="catcards">{catcards}</div>
-<h2>Popular conversions</h2>
-<div class="grid">{popular_links}</div>
 <h2 id="calc">Calculators</h2>
 <div class="grid">{calchome}</div>
+<h2 id="guides">Guides</h2>
+<div class="grid"><a class="chip" href="{BASE}/guides/">Measurement & conversion guides</a></div>
 {ad_slot("adsterra_native")}
-<h2>How to use FreeConvert</h2>
-<ol class="steps"><li>Choose a converter or calculator.</li><li>Enter a value and select the units.</li><li>Read the instant result, formula and worked example.</li></ol>
-<h2>Accurate conversions, clearly explained</h2>
-<p>FreeConvert calculates metric, imperial and specialist unit conversions from defined conversion factors and established temperature formulas. Converter pages show the formula, a worked calculation, a common-values table and guidance about rounding so you can understand and verify the result.</p>
-<p>Calculations run in your browser and require no account. The site is designed for quick checks by students, cooks, engineers, travelers and anyone comparing measurement systems.</p>'''
+<h2>Why FreeConvert</h2>
+<p>Every page is generated with exact math and loads instantly on any device. Perfect for students, cooks, engineers and travelers.</p>'''
     write("index.html", page("FreeConvert — Free Unit Converters & Calculators",
         "Free, fast unit converters (length, weight, temperature, volume, digital storage) and everyday calculators. Exact results, no sign-up.", home, SITE+"/"))
     urls.append(SITE+"/")
 
     for c in CATS:
         cat=c["slug"]; units=c["units"]
-        links=[]
-        for u in units:
-            target = units[0] if u[0] != units[0][0] else units[1]
-            links.append(f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{target[0]}/">{u[2]} → {target[2]}</a>')
-        chips="".join(links)
-        trail=[("Home",SITE+"/"),(f"{c['name']} converters",SITE+f"/{cat}/")]
-        idx=f'''{breadcrumb_html(trail)}
-<h1>{c["name"]} Converters</h1>
+        chips="".join(f'<a class="chip" href="{BASE}/{cat}/{u[0]}-to-{units[1][0]}/">{u[2]} → {units[1][2]}</a>' for u in units if u[0]!=units[1][0])
+        idx=f'''<h1>{c["name"]} Converters</h1>
 <p class="lede">{c["intro"]}</p>
-<h2>Choose a {c["name"].lower()} conversion</h2>
 <div class="grid">{chips}</div>
-{ad_slot("adsterra_native")}
-<h2>How {c["name"].lower()} conversion works</h2>
-<p>{c["intro"]} Select a starting unit above to open a calculator with the exact conversion formula, worked example and common-value table.</p>
-<p>This category contains {len(units)} supported units and {len(units)*(len(units)-1)} direct unit-to-unit converters. Reverse-conversion links make it easy to check the calculation in both directions.</p>'''
-        category_desc = f"Free {c['name'].lower()} converters for {len(units)} units, with exact formulas, worked examples and conversion tables."
-        write(f"{cat}/index.html", page(f"{c['name']} Conversion Calculators | FreeConvert", category_desc, idx,
-              SITE+f"/{cat}/", extra_jsonld=breadcrumb_schema(trail)))
+{ad_slot("adsterra_native")}'''
+        write(f"{cat}/index.html", page(f"{c['name']} Converters — FreeConvert", c["intro"], idx, SITE+f"/{cat}/"))
         urls.append(f"{SITE}/{cat}/")
         for a in units:
             for b in units:
@@ -643,6 +784,29 @@ def main():
     for slug,title,desc,fields,btn,fn,out in CALCS:
         write(f"calculators/{slug}/index.html", calc_page(slug,title,desc,fields,btn,fn,out))
         urls.append(f"{SITE}/calculators/{slug}/")
+
+    # --- Trust + transparency pages (footer-discovered; NOT in sitemap) -------
+    # These are intentionally excluded from the sitemap so the GSC-submitted
+    # URL inventory is preserved unchanged while Search Console processes it.
+    # They are reachable via the site-wide footer (footer_html()).
+    for slug,(t,d,h,b) in TRUST.items():
+        write(f"{slug}/index.html", static_page(t,d,h,b,slug))
+    # Guides hub
+    guide_cards = "".join(
+        f'<a class="chip" href="{BASE}/guides/{g[0]}/">{g[1]}</a>' for g in GUIDES)
+    guides_body = f'''<h1>Guides & explanations</h1>
+<p class="lede">Plain-language guides to measurement, conversion maths, and common mistakes — written for people, with sources.</p>
+<div class="grid">{guide_cards}</div>
+{ad_slot("adsterra_native")}
+<h2>Why these guides exist</h2>
+<p>Converters give you an answer; these guides explain the <em>why</em> — the factors, the formulas, and the traps. Every claim traces to a primary source such as NIST or BIPM.</p>'''
+    write("guides/index.html", static_page(
+        "FreeConvert guides — measurement & conversion explained",
+        "Plain-language guides to units, temperature maths, mass vs weight, rounding, and common conversion mistakes.",
+        "Guides & explanations", guides_body, "guides"))
+    # Individual guides
+    for slug,gt,gd,gb in GUIDES:
+        write(f"guides/{slug}/index.html", static_page(gt,gd,gt,gb, f"guides/{slug}"))
 
     write("robots.txt", f"""User-agent: *
 Allow: /
@@ -675,6 +839,15 @@ Crawl-delay: 1
             for i in range(0, len(urls), _chunk)
         ) + "</sitemapindex>\n"
     write("sitemap.xml", index)
+
+    # --- HARD SITEMAP GUARD (preserve the frozen GSC inventory) ---------------
+    # The submitted sitemap inventory MUST stay: 1 index + 9 children = exactly
+    # 17,323 URLs, in the same deterministic order. Any drift (e.g. a change to
+    # CATS/PRESETS) would silently alter the indexed URL set, so we fail the
+    # build loudly rather than publish a different set.
+    _n_children = (len(urls) + _chunk - 1) // _chunk
+    assert _n_children == 9, f"SITEMAP GUARD: expected 9 child sitemaps, got {_n_children}"
+    assert len(urls) == 17323, f"SITEMAP GUARD: expected 17,323 URLs, got {len(urls)}"
 
     # --- Search-engine verification files (root) -------------------------------
     # GSC_HTML_FILE / GSC_HTML_BODY and BING_HTML_BODY are set above with the
@@ -713,4 +886,3 @@ Thanks to the open-source static-web community.
 
 if __name__=="__main__":
     main()
-

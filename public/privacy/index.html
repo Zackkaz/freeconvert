@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/monetag_tag.min.js" data-zone="270206" async data-cfasync="false"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy policy</title>
+<meta name="description" content="How FreeConvert handles your data: what is collected, what is not, and how conversions stay on your device.">
+<link rel="canonical" href="https://zackkaz.github.io/privacy/">
+<meta property="og:title" content="Privacy policy"><meta property="og:description" content="How FreeConvert handles your data: what is collected, what is not, and how conversions stay on your device."><meta property="og:type" content="website"><meta property="og:url" content="https://zackkaz.github.io/privacy/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Privacy policy">
+<meta name="twitter:description" content="How FreeConvert handles your data: what is collected, what is not, and how conversions stay on your device.">
+
+<link rel="stylesheet" href="/assets/style.css">
+
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "FreeConvert", "url": "https://zackkaz.github.io"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Privacy policy", "description": "How FreeConvert handles your data: what is collected, what is not, and how conversions stay on your device.", "url": "https://zackkaz.github.io/privacy/", "isPartOf": {"@type": "WebSite", "name": "FreeConvert", "url": "https://zackkaz.github.io"}}</script>
+<script>
+// Monetag service-worker push registration (file lives at BASE+/sw.js)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("/sw.js").catch(function(e){});
+  });
+}
+</script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/">Free<span>Convert</span></a>
+  <nav class="top">
+    <a href="/">Home</a>
+    <a href="/#categories">Converters</a>
+    <a href="/#calc">Calculators</a>
+    <a href="/guides/">Guides</a>
+  </nav>
+</div></header>
+<main class="wrap">
+<h1>Privacy</h1>
+<p class="lede">FreeConvert is designed to collect as little as possible. This page explains what happens to the data you enter.</p>
+<h2>What we do not collect</h2>
+<ul>
+  <li><strong>No account.</strong> There is no sign-up and no profile.</li>
+  <li><strong>No server-side logging of conversions.</strong> The numbers you type are processed in your browser (JavaScript). They are never sent to our servers.</li>
+  <li><strong>No analytics cookies.</strong> This site does not load Google Analytics, Meta Pixel, or any behavioural-tracking script.</li>
+</ul>
+<h2>What the site does load</h2>
+<ul>
+  <li><strong>Styles and scripts</strong> needed to render the page and run calculations (served from this domain).</li>
+  <li><strong>An optional advertising script</strong> (Monetag) that may set a cookie for ad delivery and measurement. Advertising is provided by a third party; its privacy practices are governed by that provider. You can block it with a standard ad/tracker blocker. No advertising script runs until a real configuration is present - placeholder slots are inert.</li>
+  <li><strong>A service worker</strong> (sw.js) used only for the advertising push notifications feature. It is not used to read your inputs.</li>
+</ul>
+<h2>Local storage</h2>
+<p>Converter pages may store your last-used units and recent inputs in your browser's <code>localStorage</code> or <code>sessionStorage</code> so the page feels consistent on return. This stays on your device. Where a clear-history control is present, using it removes that data immediately.</p>
+<h2>Your rights</h2>
+<p>No personal account data is held, so there is nothing to export or delete on our side. To stop all local storage, clear site data for zackkaz.github.io in your browser settings.</p>
+<h2>Contact</h2>
+<p>Questions about privacy can be raised on the project's <a href="https://github.com/Zackkaz/freeconvert/issues" rel="noopener">GitHub Issues</a> page.</p>
+</main>
+<footer><div class="wrap">
+  <div class="fcols">
+    <div>
+      <div class="fbrand">Free<span>Convert</span></div>
+      <p class="fmuted">Free, accurate unit converters and calculators. No sign-up, runs in your browser.</p>
+    </div>
+    <nav class="fnav" aria-label="Footer">
+      <div><h4>Converters</h4>
+        <a href="/length/">Length</a><a href="/weight/">Weight</a>
+        <a href="/temperature/">Temperature</a><a href="/volume/">Volume</a>
+        <a href="/digital/">Digital storage</a><a href="/speed/">Speed</a>
+      </div>
+      <div><h4>Learn</h4>
+        <a href="/guides/">Guides</a>
+        <a href="/guides/metric-vs-imperial/">Metric vs imperial</a>
+        <a href="/guides/temperature-conversions/">Temperature maths</a>
+        <a href="/guides/mass-vs-weight/">Mass vs weight</a>
+      </div>
+      <div><h4>Site</h4>
+        <a href="/about/">About</a>
+        <a href="/methodology/">Methodology</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        <a href="/contact/">Contact</a>
+        <a href="/sitemap.xml">Sitemap</a>
+      </div>
+    </nav>
+  </div>
+  <div class="flegal">© 2026 FreeConvert. Conversions are calculated automatically; verify critical values independently.</div>
+</div></footer>
+</body>
+</html>

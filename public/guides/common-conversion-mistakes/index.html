@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/monetag_tag.min.js" data-zone="270206" async data-cfasync="false"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Common unit-conversion mistakes</title>
+<meta name="description" content="The most frequent unit-conversion errors and how to avoid them, from wrong factors to mixed systems.">
+<link rel="canonical" href="https://zackkaz.github.io/guides/common-conversion-mistakes/">
+<meta property="og:title" content="Common unit-conversion mistakes"><meta property="og:description" content="The most frequent unit-conversion errors and how to avoid them, from wrong factors to mixed systems."><meta property="og:type" content="website"><meta property="og:url" content="https://zackkaz.github.io/guides/common-conversion-mistakes/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Common unit-conversion mistakes">
+<meta name="twitter:description" content="The most frequent unit-conversion errors and how to avoid them, from wrong factors to mixed systems.">
+
+<link rel="stylesheet" href="/assets/style.css">
+
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "FreeConvert", "url": "https://zackkaz.github.io"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Common unit-conversion mistakes", "description": "The most frequent unit-conversion errors and how to avoid them, from wrong factors to mixed systems.", "url": "https://zackkaz.github.io/guides/common-conversion-mistakes/", "isPartOf": {"@type": "WebSite", "name": "FreeConvert", "url": "https://zackkaz.github.io"}}</script>
+<script>
+// Monetag service-worker push registration (file lives at BASE+/sw.js)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("/sw.js").catch(function(e){});
+  });
+}
+</script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/">Free<span>Convert</span></a>
+  <nav class="top">
+    <a href="/">Home</a>
+    <a href="/#categories">Converters</a>
+    <a href="/#calc">Calculators</a>
+    <a href="/guides/">Guides</a>
+  </nav>
+</div></header>
+<main class="wrap">
+<h1>Common unit-conversion mistakes</h1>
+<p class="lede">Most conversion errors are avoidable. Here are the usual suspects and how to dodge them.</p>
+<h2>1. Using the wrong factor</h2>
+<p>Memorised shortcuts ("a pound is about 2 kilos") are fine for estimates but not for precision. A pound is 0.4536 kg, not 0.5. Use the exact factor or the converter.</p>
+<h2>2. Mixing US and imperial volumes</h2>
+<p>A US gallon is 3.785 L; a UK (imperial) gallon is 4.546 L. A US cup is 236.6 mL; a UK cup is 284 mL. Always check which system a recipe or spec assumes.</p>
+<h2>3. Forgetting temperature is not a ratio</h2>
+<p>You cannot multiply °C by a factor to get °F. Use the shift formula (°F = °C×9/5+32). The zero points differ.</p>
+<h2>4. Confusing mass and weight</h2>
+<p>On Earth the numbers line up with experience, but the concepts differ (see <a href="/guides/mass-vs-weight/">Mass vs weight</a>). In scientific contexts the difference is critical.</p>
+<h2>5. Ignoring significant figures</h2>
+<p>Reporting 12.3456789 m from a tape measure marked in centimetres invents precision. Round to what your input supports.</p>
+<h2>6. Decimal/comma confusion</h2>
+<p>Many countries use a comma as the decimal separator. Double-check when copying a value between systems.</p>
+</main>
+<footer><div class="wrap">
+  <div class="fcols">
+    <div>
+      <div class="fbrand">Free<span>Convert</span></div>
+      <p class="fmuted">Free, accurate unit converters and calculators. No sign-up, runs in your browser.</p>
+    </div>
+    <nav class="fnav" aria-label="Footer">
+      <div><h4>Converters</h4>
+        <a href="/length/">Length</a><a href="/weight/">Weight</a>
+        <a href="/temperature/">Temperature</a><a href="/volume/">Volume</a>
+        <a href="/digital/">Digital storage</a><a href="/speed/">Speed</a>
+      </div>
+      <div><h4>Learn</h4>
+        <a href="/guides/">Guides</a>
+        <a href="/guides/metric-vs-imperial/">Metric vs imperial</a>
+        <a href="/guides/temperature-conversions/">Temperature maths</a>
+        <a href="/guides/mass-vs-weight/">Mass vs weight</a>
+      </div>
+      <div><h4>Site</h4>
+        <a href="/about/">About</a>
+        <a href="/methodology/">Methodology</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        <a href="/contact/">Contact</a>
+        <a href="/sitemap.xml">Sitemap</a>
+      </div>
+    </nav>
+  </div>
+  <div class="flegal">© 2026 FreeConvert. Conversions are calculated automatically; verify critical values independently.</div>
+</div></footer>
+</body>
+</html>

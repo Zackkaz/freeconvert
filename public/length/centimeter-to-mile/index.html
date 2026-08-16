@@ -32,33 +32,74 @@ if ("serviceWorker" in navigator) {
     <a href="/">Home</a>
     <a href="/#categories">Converters</a>
     <a href="/#calc">Calculators</a>
+    <a href="/guides/">Guides</a>
   </nav>
 </div></header>
 <main class="wrap">
 <div class="breadcrumb"><a href="https://zackkaz.github.io/">Home</a> › <a href="https://zackkaz.github.io/length/">Length</a> › <a href="https://zackkaz.github.io/length/centimeter-to-mile/">Centimeters to Miles</a></div>
 <h1>Centimeters to Miles</h1>
 <p class="lede">Free Centimeters to Miles converter. Exact length conversion with a live calculator and common values.</p>
-<div class="card conv">
+<div class="card conv" data-cat="length">
   <div class="row">
-    <select id="from"></select>
-    <input id="val" type="number" inputmode="decimal" value="1">
-    <span class="eq">=</span>
-    <select id="to"></select>
+    <label class="lbl" for="from">From</label>
+    <select id="from" aria-label="From unit"></select>
+    <input id="val" type="number" inputmode="decimal" value="1" aria-label="Value to convert">
+    <span class="eq" aria-hidden="true">=</span>
+    <label class="lbl" for="to">To</label>
+    <select id="to" aria-label="To unit"></select>
   </div>
-  <div class="result" id="res">—</div>
+  <div class="controls">
+    <button type="button" id="swap" class="btn small" aria-label="Swap units">⇄ Swap</button>
+    <button type="button" id="reset" class="btn small" aria-label="Reset to defaults">↺ Reset</button>
+    <button type="button" id="copy" class="btn small" aria-label="Copy result">⧉ Copy</button>
+    <label class="preclbl" for="prec">Precision</label>
+    <select id="prec" aria-label="Decimal precision">
+      <option value="auto" selected>Auto</option>
+      <option value="2">2</option><option value="4">4</option>
+      <option value="6">6</option><option value="10">10</option>
+    </select>
+  </div>
+  <div class="result" id="res" aria-live="polite" aria-atomic="true">—</div>
+  <div class="copystat" id="copystat" role="status" aria-live="polite"></div>
 </div>
-<div class="ad"><script type="text/javascript">atOptions = {key:"YOUR_ADSTERRA_KEY_HERE", format:"iframe", height:250, width:300, params:{}};(function(){var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0];g.src="https://cdn.adsterra.com/asyncjs.php"; s.parentNode.insertBefore(g,s);})();</script></div>
+
 <h2>Common Centimeters to Miles conversions</h2>
 <table><thead><tr><th>Value</th><th>Miles (mi)</th></tr></thead><tbody><tr><td><a href="/length/centimeter-to-mile/1/">1 cm</a></td><td>0.000006 mi</td></tr><tr><td><a href="/length/centimeter-to-mile/5/">5 cm</a></td><td>0.000031 mi</td></tr><tr><td><a href="/length/centimeter-to-mile/10/">10 cm</a></td><td>0.000062 mi</td></tr><tr><td><a href="/length/centimeter-to-mile/50/">50 cm</a></td><td>0.000311 mi</td></tr><tr><td><a href="/length/centimeter-to-mile/100/">100 cm</a></td><td>0.000621 mi</td></tr></tbody></table>
 <h2>Frequently asked questions</h2>
 <div class="faq"><details><summary>How many feet in a meter?</summary><p>Exactly 3.28084 feet make 1 meter (1 m = 1 ÷ 0.3048 ft).</p></details><details><summary>Which is longer, a mile or a kilometer?</summary><p>A mile is longer: 1 mile = 1.60934 kilometers.</p></details></div>
-<div class="ad"><a href="YOUR_MONETAG_SMARTLINK_URL_HERE" rel="nofollow"><script type="text/javascript" src="//slmonitor.net/script.js" async></script>Open exclusive offers</a></div>
+
 <h2>More Length converters</h2>
-<div class="grid"><a class="chip" href="/length/meter-to-mile/">Meters → Miles</a><a class="chip" href="/length/kilometer-to-mile/">Kilometers → Miles</a><a class="chip" href="/length/millimeter-to-mile/">Millimeters → Miles</a><a class="chip" href="/length/micrometer-to-mile/">Micrometers → Miles</a><a class="chip" href="/length/mile-to-mile/">Miles → Miles</a><a class="chip" href="/length/yard-to-mile/">Yards → Miles</a><a class="chip" href="/length/foot-to-mile/">Feet → Miles</a><a class="chip" href="/length/inch-to-mile/">Inches → Miles</a><a class="chip" href="/length/nautical-mile-to-mile/">Nautical miles → Miles</a><a class="chip" href="/length/light-year-to-mile/">Light-years → Miles</a><a class="chip" href="/length/astronomical-unit-to-mile/">Astronomical units → Miles</a></div>
+<div class="grid"><a class="chip" href="/length/meter-to-mile/">Meters → Miles</a><a class="chip" href="/length/kilometer-to-mile/">Kilometers → Miles</a><a class="chip" href="/length/millimeter-to-mile/">Millimeters → Miles</a><a class="chip" href="/length/micrometer-to-mile/">Micrometers → Miles</a><a class="chip" href="/length/yard-to-mile/">Yards → Miles</a><a class="chip" href="/length/foot-to-mile/">Feet → Miles</a><a class="chip" href="/length/inch-to-mile/">Inches → Miles</a><a class="chip" href="/length/nautical-mile-to-mile/">Nautical miles → Miles</a><a class="chip" href="/length/light-year-to-mile/">Light-years → Miles</a><a class="chip" href="/length/astronomical-unit-to-mile/">Astronomical units → Miles</a></div>
 </main>
 <footer><div class="wrap">
-  <div>© 2026 FreeConvert — free unit converters & calculators.</div>
-  <div><a href="/sitemap.xml">Sitemap</a> · <a href="/robots.txt">Robots</a></div>
+  <div class="fcols">
+    <div>
+      <div class="fbrand">Free<span>Convert</span></div>
+      <p class="fmuted">Free, accurate unit converters and calculators. No sign-up, runs in your browser.</p>
+    </div>
+    <nav class="fnav" aria-label="Footer">
+      <div><h4>Converters</h4>
+        <a href="/length/">Length</a><a href="/weight/">Weight</a>
+        <a href="/temperature/">Temperature</a><a href="/volume/">Volume</a>
+        <a href="/digital/">Digital storage</a><a href="/speed/">Speed</a>
+      </div>
+      <div><h4>Learn</h4>
+        <a href="/guides/">Guides</a>
+        <a href="/guides/metric-vs-imperial/">Metric vs imperial</a>
+        <a href="/guides/temperature-conversions/">Temperature maths</a>
+        <a href="/guides/mass-vs-weight/">Mass vs weight</a>
+      </div>
+      <div><h4>Site</h4>
+        <a href="/about/">About</a>
+        <a href="/methodology/">Methodology</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        <a href="/contact/">Contact</a>
+        <a href="/sitemap.xml">Sitemap</a>
+      </div>
+    </nav>
+  </div>
+  <div class="flegal">© 2026 FreeConvert. Conversions are calculated automatically; verify critical values independently.</div>
 </div></footer>
 </body>
 </html>
